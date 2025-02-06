@@ -109,6 +109,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>me.earthme.luminol</groupId>
+            <artifactId>luminol-api</artifactId>
+            <version>1.21.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>io.papermc</groupId>
             <artifactId>paperlib</artifactId>
             <version>1.0.8</version>
