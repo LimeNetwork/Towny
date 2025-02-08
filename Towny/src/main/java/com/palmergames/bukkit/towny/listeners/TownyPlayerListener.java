@@ -796,12 +796,14 @@ public class TownyPlayerListener implements Listener {
 		if (resident.isJailed()) {
 			if (event.getTeleportCause() == TeleportCause.COMMAND) {
 				TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_jailed_players_no_teleport"));
-				event.setCancelled(true);
+				PaperLib.teleportAsync(player, player.getLocation());
+//				event.setCancelled(true); * cancel event is not supported rn
 				return;
 			}
 			if (!TownySettings.JailAllowsTeleportItems() && (event.getTeleportCause() == TeleportCause.ENDER_PEARL || event.getTeleportCause() == TeleportCause.CHORUS_FRUIT)) {
 				TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_jailed_players_no_teleport"));
-				event.setCancelled(true);
+				PaperLib.teleportAsync(player, player.getLocation());
+//				event.setCancelled(true); * cancel event is not supported rn
 				return;
 			}
 		}
@@ -814,12 +816,14 @@ public class TownyPlayerListener implements Listener {
 				if (town != null && town.hasOutlaw(resident)) {
 					if (event.getTeleportCause() == TeleportCause.COMMAND) {
 						TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_outlawed_players_no_teleport"));
-						event.setCancelled(true);
+						PaperLib.teleportAsync(player, player.getLocation());
+//						event.setCancelled(true); * cancel event is not supported rn
 						return;
 					}
 					if (!TownySettings.canOutlawsUseTeleportItems() && (event.getTeleportCause() == TeleportCause.ENDER_PEARL || event.getTeleportCause() == TeleportCause.CHORUS_FRUIT)) {
 						TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_outlawed_players_no_teleport"));
-						event.setCancelled(true);
+						PaperLib.teleportAsync(player, player.getLocation());
+//						event.setCancelled(true); * cancel event is not supported rn
 						return;
 					}
 				}
@@ -830,7 +834,8 @@ public class TownyPlayerListener implements Listener {
 		if (event.getTeleportCause() == TeleportCause.CHORUS_FRUIT && TownySettings.isItemUseMaterial(Material.CHORUS_FRUIT, event.getDestination())) {
 			//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
 			if (!TownyActionEventExecutor.canItemuse(player, event.getDestination(), Material.CHORUS_FRUIT)) {
-				event.setCancelled(true);
+				PaperLib.teleportAsync(player, player.getLocation());
+//				event.setCancelled(true); * cancel event is not supported rn
 				return;
 			}
 		}
@@ -839,7 +844,8 @@ public class TownyPlayerListener implements Listener {
 		if (event.getTeleportCause() == TeleportCause.ENDER_PEARL && TownySettings.isItemUseMaterial(Material.ENDER_PEARL, event.getDestination())) {
 			//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
 			if (!TownyActionEventExecutor.canItemuse(player, event.getDestination(), Material.ENDER_PEARL)) {
-				event.setCancelled(true);
+				PaperLib.teleportAsync(player, player.getLocation());
+//				event.setCancelled(true); * cancel event is not supported rn
 				return;
 			}
 		}
