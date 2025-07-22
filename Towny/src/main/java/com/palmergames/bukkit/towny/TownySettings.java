@@ -7,6 +7,7 @@ import com.palmergames.bukkit.towny.event.NationBonusCalculationEvent;
 import com.palmergames.bukkit.towny.event.NationUpkeepCalculationEvent;
 import com.palmergames.bukkit.towny.event.TownUpkeepCalculationEvent;
 import com.palmergames.bukkit.towny.event.TownUpkeepPenalityCalculationEvent;
+import com.palmergames.bukkit.towny.event.town.TownCalculateMaxTownBlocksEvent;
 import com.palmergames.bukkit.towny.exceptions.TownyException;
 import com.palmergames.bukkit.towny.exceptions.initialization.TownyInitException;
 import com.palmergames.bukkit.towny.object.Nation;
@@ -22,6 +23,7 @@ import com.palmergames.bukkit.towny.object.spawnlevel.SpawnLevel;
 import com.palmergames.bukkit.towny.permissions.PermissionNodes;
 import com.palmergames.bukkit.towny.utils.EntityTypeUtil;
 import com.palmergames.bukkit.towny.utils.MapUtil;
+import com.palmergames.bukkit.towny.utils.MinecraftVersion;
 import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.Colors;
 import com.palmergames.bukkit.util.ItemLists;
@@ -49,6 +51,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -101,8 +104,8 @@ public class TownySettings {
 	private static final SortedMap<Integer, TownLevel> configTownLevel = Collections.synchronizedSortedMap(new TreeMap<>(Collections.reverseOrder()));
 	private static final SortedMap<Integer, NationLevel> configNationLevel = Collections.synchronizedSortedMap(new TreeMap<>(Collections.reverseOrder()));
 	
-	private static final Set<Material> itemUseMaterials = new HashSet<>();
-	private static final Set<Material> switchUseMaterials = new HashSet<>();
+	private static final Set<Material> itemUseMaterials = new LinkedHashSet<>();
+	private static final Set<Material> switchUseMaterials = new LinkedHashSet<>();
 	private static final List<Class<?>> protectedMobs = new ArrayList<>();
 	
 	private static final Map<NamespacedKey, Consumer<CommentedConfiguration>> CONFIG_RELOAD_LISTENERS = new HashMap<>();
@@ -320,7 +323,11 @@ public class TownySettings {
 	}
 
 	public static TownLevel getTownLevel(Town town) {
-		return getTownLevel(town.getLevelNumber());
+		// In order to look up the town level we always have to reference a number of
+		// residents (the key by which TownLevels are mapped,) even when dealing with
+		// manually-set TownLevels.
+		int numResidents = getResidentCountForTownLevel(town.getLevelNumber());
+		return getTownLevel(numResidents);
 	}
 
 	public static TownLevel getTownLevelWithModifier(int modifier, Town town) {
@@ -352,11 +359,11 @@ public class TownySettings {
 	}
 
 	/**
-	 * Gets the TownLevel for manually-set towns, returning the key in the SortedMap which corresponds with the position of the key in the SortedMap's keySet.
+	 * Gets the number of residents required to look up the TownLevel in the SortedMap.
 	 * @param level The number used to get the key from the keySet array. 
 	 * @return the number of residents which will get us the correct TownLevel in the TownLevel SortedMap.
 	 */
-	public static int getTownLevelWhichIsManuallySet(int level) {
+	public static int getResidentCountForTownLevel(int level) {
 		
 		Integer[] keys = configTownLevel.keySet().toArray(new Integer[] {});
 		// keys is always ordered from biggest to lowest (despite what the javadocs say
@@ -367,6 +374,28 @@ public class TownySettings {
 		return keys[level];
 	}
 
+	/**
+	 * Gets the number of the TownLevel for towns, returning the position in the
+	 * SortedMap which corresponds with the given number of residents.
+	 * 
+	 * @param residents The number used to get the key from the keySet array.
+	 * @param town The town being checked, in case it is ruined.
+	 * @return the number of the TownLevel.
+	 */
+	public static int getTownLevelWhichIsNotManuallySet(int residents, Town town) {
+		if (town.isRuined())
+			return 0;
+
+		int i = TownySettings.getTownLevelMax() - 1; // Remove one in order to get the index of an array.
+		for (int level : configTownLevel.keySet()) {
+			if (residents >= level)
+				return i;
+
+			i--;
+		}
+		return 0;
+	}
+	
 	public static int getTownLevelMax() {
 		return configTownLevel.size();
 	}
@@ -509,7 +538,7 @@ public class TownySettings {
 				case "thrown_exp_bottle" -> "experience_bottle";
 				case "ender_signal" -> "eye_of_ender";
 				case "mushroom_cow" -> "mooshroom";
-				case "splash_potion" -> "potion";
+				case "splash_potion" -> MinecraftVersion.CURRENT_VERSION.isNewerThanOrEquals(MinecraftVersion.MINECRAFT_1_21_5) ? "splash_potion" : "potion";
 				case "leash_hitch" -> "leash_knot";
 				case "lightning" -> "lightning_bolt";
 				case "dropped_item" -> "item";
@@ -522,6 +551,8 @@ public class TownySettings {
 			
 			if (type != null)
 				entities.add(type);
+			else
+				System.out.println("Unmatched entity: " + entityName);
 		}
 
 		return entities;
@@ -1250,7 +1281,10 @@ public class TownySettings {
 		if (ratio != 0 && ratioSizeLimit > 0)
 			n = Math.min(ratioSizeLimit, n);
 
-		return n;
+		TownCalculateMaxTownBlocksEvent event = new TownCalculateMaxTownBlocksEvent(town, n);
+		BukkitTools.fireEvent(event);
+
+		return event.getTownBlockCount();
 	}
 
 	public static int getMaxTownBlocks(Town town, int residents) {
@@ -1263,7 +1297,11 @@ public class TownySettings {
 			amount += residents * ratio;
 
 		amount += getNationBonusBlocks(town);
-		return amount;
+
+		TownCalculateMaxTownBlocksEvent event = new TownCalculateMaxTownBlocksEvent(town, amount);
+		BukkitTools.fireEvent(event);
+
+		return event.getTownBlockCount();
 	}
 	
 	public static int getMaxOutposts(Town town, int residents) {
@@ -2221,12 +2259,15 @@ public class TownySettings {
 
 		// outposts can have an added cost to the town's upkeep.
 		double outpostCost = getPerOutpostUpkeepCost() * town.getMaxOutpostSpawn();
-		double baseUpkeep = getTownUpkeep() + outpostCost;
+		// outposts having a cost will mess up the per-plot-upkeep feature, so add that on later.
+		double baseUpkeep = getTownUpkeep() + (isUpkeepByPlot() ? 0 : outpostCost);
 		// Amount is calculated using the above multipliers.
 		double amount = ((baseUpkeep * townMultiplier) * townLevelPlotModifier) * nationMultiplier;
 
 		// When per-plot-upkeep is in use, there can be min/max amounts.
 		if (isUpkeepByPlot()) {
+			// Tack on the outpost cost here when isUpkeepByPlot is used.
+			amount += outpostCost;
 			if (TownySettings.getPlotBasedUpkeepMinimumAmount() > 0.0)
 				amount = Math.max(amount, TownySettings.getPlotBasedUpkeepMinimumAmount());
 			if (TownySettings.getPlotBasedUpkeepMaximumAmount() > 0.0) 
@@ -2949,6 +2990,18 @@ public class TownySettings {
 
 	public static String getCancelCommand() {
 		return config != null ? getString(ConfigNodes.INVITE_SYSTEM_CANCEL_COMMAND) : ConfigNodes.INVITE_SYSTEM_CANCEL_COMMAND.getDefault();
+	}
+
+	public static String getConfirmationCommandFormat() {
+		return config != null ? getString(ConfigNodes.INVITE_SYSTEM_CONFIRMATION_FORMAT) : ConfigNodes.INVITE_SYSTEM_CONFIRMATION_FORMAT.getDefault();
+	}
+
+	public static String getConfirmationCommandYesColour() {
+		return config != null ? getString(ConfigNodes.INVITE_SYSTEM_CONFIRMATION_YES_COLOUR) : ConfigNodes.INVITE_SYSTEM_CONFIRMATION_YES_COLOUR.getDefault();
+	}
+
+	public static String getConfirmationCommandNoColour() {
+		return config != null ? getString(ConfigNodes.INVITE_SYSTEM_CONFIRMATION_NO_COLOUR) : ConfigNodes.INVITE_SYSTEM_CONFIRMATION_NO_COLOUR.getDefault();
 	}
 
 	public static boolean getOutsidersPreventPVPToggle() {

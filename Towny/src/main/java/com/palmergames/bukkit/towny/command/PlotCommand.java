@@ -132,6 +132,8 @@ public class PlotCommand extends BaseCommand implements CommandExecutor {
 	
 	private static final List<String> districtTabCompletes = Arrays.asList(
 		"add",
+		"new",
+		"create",
 		"delete",
 		"remove",
 		"rename"
@@ -1465,7 +1467,8 @@ public class PlotCommand extends BaseCommand implements CommandExecutor {
 			throw new TownyException(Translatable.of("msg_err_rename_district_name_required"));
 
 		District district = catchMissingDistrict(townBlock);
-		String newName= split[1];
+		String newName = split[1];
+		NameValidation.checkAndFilterDistrictNameOrThrow(newName);
 		String oldName = district.getName();
 		// Change name;
 		TownyUniverse.getInstance().getDataSource().renameDistrict(district, newName);
@@ -1732,7 +1735,8 @@ public class PlotCommand extends BaseCommand implements CommandExecutor {
 			throw new TownyException(Translatable.of("msg_err_plot_group_name_required"));
 
 		PlotGroup group = catchMissingPlotGroup(townBlock);
-		String newName= split[1];
+		String newName = split[1];
+		NameValidation.checkAndFilterPlotGroupNameOrThrow(newName);
 		String oldName = group.getName();
 		// Change name;
 		TownyUniverse.getInstance().getDataSource().renameGroup(group, newName);
@@ -2091,6 +2095,12 @@ public class PlotCommand extends BaseCommand implements CommandExecutor {
 			if (group.hasTrustedResident(trustedResident))
 				throw new TownyException(Translatable.of("msg_already_trusted", trustedResident.getName(), Translatable.of("plotgroup_sing")));
 
+			if (townBlock.getTownOrNull().hasOutlaw(trustedResident))
+				throw new TownyException(Translatable.of("msg_err_you_cannot_add_trust_on_outlaw"));
+
+			if (trustedResident.hasNation() && townBlock.getTownOrNull().hasNation() && townBlock.getTownOrNull().getNationOrNull().hasEnemy(trustedResident.getNationOrNull()))
+				throw new TownyException(Translatable.of("msg_err_you_cannot_add_trust_on_enemy"));
+
 			BukkitTools.ifCancelledThenThrow(new PlotTrustAddEvent(new ArrayList<>(group.getTownBlocks()), trustedResident, player));
 
 			group.addTrustedResident(trustedResident);
@@ -2145,6 +2155,12 @@ public class PlotCommand extends BaseCommand implements CommandExecutor {
 		if (args[0].equalsIgnoreCase("add")) {
 			if (townBlock.hasTrustedResident(resident))
 				throw new TownyException(Translatable.of("msg_already_trusted", resident.getName(), Translatable.of("townblock")));
+
+			if (townBlock.getTownOrNull().hasOutlaw(resident))
+				throw new TownyException(Translatable.of("msg_err_you_cannot_add_trust_on_outlaw"));
+
+			if (resident.hasNation() && townBlock.getTownOrNull().hasNation() && townBlock.getTownOrNull().getNationOrNull().hasEnemy(resident.getNationOrNull()))
+				throw new TownyException(Translatable.of("msg_err_you_cannot_add_trust_on_enemy"));
 
 			BukkitTools.ifCancelledThenThrow(new PlotTrustAddEvent(townBlock, resident, player));
 

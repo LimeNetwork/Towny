@@ -95,6 +95,7 @@ town_trust_help_2: "Lista zaufanch mieszkańców w mieście."
 town_towntrust_help_0: "Dodaje miasto do grona zaufanych twojego miata."
 town_towntrust_help_1: "Usuwa miasto z grona zaufanych twojego miasta."
 town_towntrust_help_2: "Lista zaufanych miast podanego miasta."
+town_buy_help: "Kup bonusowe bloki miasta, aby zwiększyć limit roszczeń miasta."
 town_cede_help: "Oferuje działkę, na którą stoisz do przejęcia przez dane miasto."
 mayor_help_3: 'Pozyskaj teren nieprzylegajacy do miasta'
 mayor_help_4: 'Pozyskaj dookoła w promieniu X'
@@ -142,6 +143,9 @@ nation_toggle_help_0: "Przełącza stan pokojowy nacji."
 nation_toggle_help_1: "Przełącza status publiczny, pozwalając graczom spoza nacji użyć /n spawn."
 nation_toggle_help_2: "Przełącza status otwarty, pozwalając miastom dołączyć bez zaproszenia."
 nation_toggle_help_3: "Przełącza obowiązywanie podatku procentowego. Miasta będą płaciły procent od posiadanych pieniędzy, zamiast stałej stawki."
+nation_sanction_help_1: "Dodaje miasto na listę Sankcjonowanych Miast."
+nation_sanction_help_2: "Usuwa miasto z listy Sankcjonowanych Miast."
+nation_sanction_help_3: "Wyświetla listę Sankcjonowanych Miast Twojego Miasta."
 king_help_1: 'Pomoc Lidera Nacji'
 king_help_2: 'Wyznacz swoich sojuszników.'
 king_help_3: 'Wyznacz swoich wrogów.'
@@ -188,7 +192,6 @@ mode_4: 'Domyślne pisanie na kanale miasta'
 mode_5: 'Domyślne pisanie na kanale nacji'
 mode_6: 'Może postawić %s we wrogim terytorium, aby oznaczyć strefy wojenne.'
 plot_perms: 'Użyj %s zamiast %s do ustawiania uprawnień działki.'
-plot_perms_1: 'Działki mieszkańców nie korzystają z uprawnień Obcych.'
 res_list: 'Mieszkańcy'
 res_sing: 'Mieszkaniec'
 mayor_sing: 'Burmistrz'
@@ -601,7 +604,6 @@ msg_err_not_percentage: '&cProcent musi być mniej niż 100.'
 msg_err_no_economy: '&cEkonomia nie została włączona.'
 msg_err_not_block_type: '&cNiewłaściwy rodzaj działki!'
 msg_not_allowed_join: '&c%s nie jest uprawniony do dołączenia się do miasta.'
-msg_offline_no_join: '&c%s jest offline, lecz posiada uprawnienia, nie może jednak dołączyć do miasta.'
 msg_err_cannot_perform_action: '&cNie można wykonać tej czynności w %s.'
 msg_npc_flag: '&bFlaga NPC jest teraz %s dla %s.'
 msg_warning_delete: '&4*** UWAGA, %s ZOSTANIE USUNIĘTE NASTĘPNEGO DNIA ZE WZGLĘDU NA BRAK FUNDUSZY ***'
@@ -614,7 +616,6 @@ msg_err_not_enough_residents_join_nation: '&bMiasto %s nie ma wystarczającej li
 msg_not_enough_residents_no_longer_capital: '&bStara stolica nacji miała zbyt mało mieszkańców. Nową stolicą staje się %s.'
 msg_town_not_enough_residents_left_nation: '&bMiasto %s już nie ma wystarczającej liczby mieszkańców, aby należeć do swojej nacji, więc zostało z niej wyrzucone.'
 msg_nation_disbanded_town_not_enough_residents: '&bMiasto %s nie ma już wystarczającej liczby mieszkańców, aby tworzyć nację, przez co nacja musiała zostać rozwiązana.'
-msg_not_enough_residents_refunded: '&bZwrócono ci kwotę $%s za rozwiązanie twojej nacji z powodu zbyt małej ilości mieszkańców.'
 msg_not_enough_residents_capital: '&bMiasto %s nie ma wystarczającej liczby mieszkańców, aby być stolicą nacji.'
 list_page: '&bStrona %s z %s'
 list_err_not_enough_pages: '&cDostępnych jest tylko %s stron'

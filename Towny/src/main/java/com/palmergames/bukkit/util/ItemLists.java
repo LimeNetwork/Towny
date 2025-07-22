@@ -307,13 +307,18 @@ public class ItemLists extends AbstractRegistryList<Material> {
 		.build();
 
 	/**
+	 * List of Carpets.
+	 */
+	public static final ItemLists CARPETS = newBuilder().endsWith("_CARPET").build();
+
+	/**
 	 * List of Plants.
 	 */
 	public static final ItemLists PLANTS = newBuilder()
 			.includeList(FLOWERS)
 			.includeList(CROPS)
 			.includeList(PLANTABLES)
-			.add("TALL_GRASS","LARGE_FERN","VINE","TWISTING_VINES_PLANT","WEEPING_VINES_PLANT","NETHER_WART_BLOCK","CRIMSON_ROOTS","WARPED_ROOTS","NETHER_SPROUTS","BIG_DRIPLEAF","SMALL_DRIPLEAF").build();
+			.add("SHORT_GRASS","TALL_GRASS","LARGE_FERN","VINE","TWISTING_VINES_PLANT","WEEPING_VINES_PLANT","NETHER_WART_BLOCK","CRIMSON_ROOTS","WARPED_ROOTS","NETHER_SPROUTS","BIG_DRIPLEAF","SMALL_DRIPLEAF").build();
 
 	/**
 	 * Minecraft uses 3 types of air
@@ -351,6 +356,7 @@ public class ItemLists extends AbstractRegistryList<Material> {
 			.includeList(DOORS) ////if open they are basically air
 			.includeList(TORCHES)
 			.includeList(BANNERS)
+			.includeList(CARPETS)
 			.includeList(PLANTS).build();
 	
 	public static final ItemLists FALLING_BLOCKS = newBuilder()
@@ -375,6 +381,8 @@ public class ItemLists extends AbstractRegistryList<Material> {
 			.includeList(PRESSURE_PLATES)
 			.includeList(WOOD_DOORS)
 			.build();
+
+	public static final ItemLists INFESTED_BLOCKS = newBuilder().startsWith("INFESTED_").build();
 
 	/**
 	 * Config-useable material groups.

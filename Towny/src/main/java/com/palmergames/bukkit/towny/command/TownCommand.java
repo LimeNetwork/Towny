@@ -260,7 +260,8 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 	private static final List<String> townConsoleTabCompletes = Arrays.asList(
 		"?",
 		"help",
-		"list"
+		"list",
+		"reslist"
 	);
 	
 	static final List<String> townAddRemoveTabCompletes = Arrays.asList(
@@ -353,7 +354,9 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 			case 4:
 				switch (args[1].toLowerCase(Locale.ROOT)) {
 				case "add":
-					return NameUtil.filterByStart(TownyPerms.getTownRanks(), args[3]);
+					if (town == null)
+						return Collections.emptyList();
+					return NameUtil.filterByStart(TownyPerms.getTownRanks(town), args[3]);
 				case "remove": {
 					Resident res = TownyUniverse.getInstance().getResident(args[2]);
 					if (res != null)
@@ -967,6 +970,9 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 
 		// Call cancellable event.
 		BukkitTools.ifCancelledThenThrow(new TownOutlawAddEvent(sender, target, town));
+
+		// Remove any trust they have in the town or town's plots.
+		target.removeTrustInTown(town);
 
 		// Kick outlaws from town if they are residents.
 		if (town.hasResident(target)) {
@@ -1805,6 +1811,13 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		if (target.hasTownRank(rank)) 
 			throw new TownyException(Translatable.of("msg_resident_already_has_rank", target.getName(), townWord));
 
+		if (TownyPerms.ranksWithTownLevelRequirementPresent()) {
+			int rankLevelReq = TownyPerms.getRankTownLevelReq(rank);
+			int levelNumber = target.getTownOrNull().getLevelNumber();
+			if (rankLevelReq > levelNumber)
+				throw new TownyException(Translatable.of("msg_town_or_nation_level_not_high_enough_for_this_rank", townWord, rank, townWord, levelNumber, rankLevelReq));
+		}
+
 		BukkitTools.ifCancelledThenThrow(new TownAddResidentRankEvent(target, rank, target.getTownOrNull()));
 
 		target.addTownRank(rank);
@@ -2544,8 +2557,15 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		// If the town doesn't cost money to create, just make the Town.
 		if (noCharge || !TownyEconomyHandler.isActive()) {
 			BukkitTools.ifCancelledThenThrow(new PreNewTownEvent(player, name, spawnLocation, 0));
-			newTown(world, name, resident, key, spawnLocation, player);
-			TownyMessaging.sendGlobalMessage(Translatable.of("msg_new_town", player.getName(), StringMgmt.remUnderscore(name)));
+			try {
+				newTown(world, name, resident, key, spawnLocation, player);
+				TownyMessaging.sendGlobalMessage(Translatable.of("msg_new_town", player.getName(), StringMgmt.remUnderscore(name)));
+			} catch (TownyException e) {
+				TownyMessaging.sendErrorMsg(player, e.getMessage(player));
+				if (!(e instanceof CancelledEventException)) {
+					plugin.getLogger().log(Level.WARNING, "An exception occurred while creating a new town", e);
+				}
+			}
 			return;
 		}
 
@@ -2567,7 +2587,9 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 				TownyMessaging.sendGlobalMessage(Translatable.of("msg_new_town", player.getName(), StringMgmt.remUnderscore(finalName)));
 			} catch (TownyException e) {
 				TownyMessaging.sendErrorMsg(player, e.getMessage(player));
-				plugin.getLogger().log(Level.WARNING, "An exception occurred while creating a new town", e);
+				if (!(e instanceof CancelledEventException)) {
+					plugin.getLogger().log(Level.WARNING, "An exception occurred while creating a new town", e);
+				}
 			}
 		})
 		.setTitle(Translatable.of("msg_confirm_purchase", prettyMoney(cost)))
@@ -2597,11 +2619,10 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		if (BukkitTools.isEventCancelled(preClaimEvent)) {
 			TownyUniverse.getInstance().removeTownBlock(townBlock);
 			TownyUniverse.getInstance().unregisterTown(town);
-			town = null;
-			townBlock = null;
 			if (TownyEconomyHandler.isActive() && cost > 0)
 				resident.getAccount().deposit(cost, "Cancelled town creation refund.");
-			throw new TownyException(preClaimEvent.getCancelMessage());
+			
+			throw new CancelledEventException(preClaimEvent);
 		}
 
 		town.setRegistered(System.currentTimeMillis());
@@ -2821,7 +2842,7 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 
 			// Not online
 			if (!newMember.isOnline()) 
-				throw new TownyException(Translatable.of("msg_offline_no_join", newMember.getName()));
+				throw new TownyException(Translatable.of("msg_player_is_not_online", newMember.getName()));
 
 			// only add players with the right permissions.
 			if (!newMember.hasPermissionNode(PermissionNodes.TOWNY_TOWN_RESIDENT.getNode()))
@@ -2944,6 +2965,9 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 				throw new TownyException(Translatable.of("msg_you_cannot_kick_this_resident", resToKick));
 
 			BukkitTools.ifCancelledThenThrow(new TownKickEvent(resToKick, sender));
+
+			// Remove any trust they have in the town or town's plots.
+			resToKick.removeTrustInTown(town);
 
 			// Finally kick the resident.
 			resToKick.removeTown();
@@ -3779,8 +3803,8 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		if (!remainingTown.isAllowedThisAmountOfResidents(newResidentsAmount, remainingTown.isCapital()))
 			throw new TownyException(Translatable.of("msg_town_merge_err_too_many_residents", TownySettings.getMaxResidentsForTown(remainingTown)));
 
-		if (!remainingTown.hasUnlimitedClaims() && townWouldHaveTooManyTownBlocks(remainingTown, succumbingTown, newResidentsAmount))
-			throw new TownyException(Translatable.of("msg_town_merge_err_too_many_townblocks", TownySettings.getMaxTownBlocks(remainingTown, newResidentsAmount)));
+		if (!remainingTown.hasUnlimitedClaims())
+			vetTownWouldHaveTooManyTownBlocksOrThrow(remainingTown, succumbingTown, newResidentsAmount);
 
 		if ((remainingTown.getPurchasedBlocks() + succumbingTown.getPurchasedBlocks()) > TownySettings.getMaxPurchasedBlocks(remainingTown, newResidentsAmount))
 			throw new TownyException(Translatable.of("msg_town_merge_err_too_many_purchased_townblocks", TownySettings.getMaxPurchasedBlocks(remainingTown, newResidentsAmount)));
@@ -3802,13 +3826,18 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 			throw new TownyException(Translatable.of("msg_town_merge_other_offline", succumbingTown.getName(), succumbingTown.getMayor().getName()));
 	}
 
-	private static boolean townWouldHaveTooManyTownBlocks(Town remainingTown, Town succumbingTown, int newResidentsAmount) {
+	private static void vetTownWouldHaveTooManyTownBlocksOrThrow(Town remainingTown, Town succumbingTown, int newResidentsAmount) throws TownyException {
 		int newTownBonus = TownySettings.getNewTownBonusBlocks();
 		int succumbingTownTBAmount = succumbingTown.getNumTownBlocks();
 		if (newTownBonus > 0 && succumbingTown.getBonusBlocks() >= newTownBonus)
 			succumbingTownTBAmount = succumbingTownTBAmount - newTownBonus;
 
-		return (remainingTown.getNumTownBlocks() + succumbingTownTBAmount) > TownySettings.getMaxTownBlocks(remainingTown, newResidentsAmount);
+		int succumbingBonusBlocks = succumbingTown.getBonusBlocks() + (2 * newTownBonus);
+		int succumbingPurchasedBlocks = succumbingTown.getPurchasedBlocks();
+		int maxAllowedTownBlocks = TownySettings.getMaxTownBlocks(remainingTown, newResidentsAmount) + succumbingBonusBlocks + succumbingPurchasedBlocks;
+
+		if ((remainingTown.getNumTownBlocks() + succumbingTownTBAmount) > maxAllowedTownBlocks)
+			throw new TownyException(Translatable.of("msg_town_merge_err_too_many_townblocks", maxAllowedTownBlocks));
 	}
 
 	private static double[] getMergeCosts(Town remainingTown, Town succumbingTown, boolean admin) throws TownyException {
@@ -4007,6 +4036,9 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		} else if (args.length == 2){
 			town = getTownOrThrow(args[1]);
 		}
+
+		if (town == null)
+			throw new TownyException(Translatable.of("msg_specify_name"));
 		
 		TownyMessaging.sendMessage(sender, ChatTools.formatTitle(town.getName() + " " + Translatable.of("res_list").forLocale(sender)));
 		TownyMessaging.sendMessage(sender, TownyFormatter.getFormattedTownyObjects(Translatable.of("res_list").forLocale(sender), new ArrayList<>(town.getResidents())));
@@ -4109,6 +4141,12 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		if (town.hasTrustedResident(resident))
 			throw new TownyException(Translatable.of("msg_already_trusted", resident.getName(), Translatable.of("town_sing")));
 
+		if (town.hasOutlaw(resident))
+			throw new TownyException(Translatable.of("msg_err_you_cannot_add_trust_on_outlaw"));
+
+		if (resident.hasNation() && town.hasNation() && town.getNationOrNull().hasEnemy(resident.getNationOrNull()))
+			throw new TownyException(Translatable.of("msg_err_you_cannot_add_trust_on_enemy"));
+
 		BukkitTools.ifCancelledThenThrow(new TownTrustAddEvent(sender, resident, town));
 
 		town.addTrustedResident(resident);
@@ -4172,6 +4210,12 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		if (town.hasTrustedTown(trustTown))
 			throw new TownyException(Translatable.of("msg_already_trusted", trustTown.getName(), Translatable.of("town_sing")));
 
+		if (trustTown.getResidents().stream().filter(res -> town.hasOutlaw(res)).findAny().isPresent())
+			throw new TownyException(Translatable.of("msg_err_you_cannot_add_towntrust_on_outlaw"));
+
+		if (trustTown.hasNation() && town.hasNation() && town.getNationOrNull().hasEnemy(trustTown.getNationOrNull()))
+			throw new TownyException(Translatable.of("msg_err_you_cannot_add_towntrust_on_enemy"));
+
 		if (town == trustTown)
 			throw new TownyException(Translatable.of("msg_cannot_trust_your_own_town"));
 
@@ -4232,7 +4276,7 @@ public class TownCommand extends BaseCommand implements CommandExecutor {
 		if (args.length == 0)
 			throw new TownyException(Translatable.of("msg_error_must_be_num"));
 
-		double forSalePrice = Math.min(MathUtil.getDoubleOrThrow(args[0]), TownySettings.maxBuyTownPrice());
+		double forSalePrice = Math.min(MathUtil.getPositiveDoubleOrThrow(args[0]), TownySettings.maxBuyTownPrice());
 		Town town = getTownFromPlayerOrThrow(player);
 
 		Confirmation

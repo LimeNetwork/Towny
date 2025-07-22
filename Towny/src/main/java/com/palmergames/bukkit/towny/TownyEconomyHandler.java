@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 
 /**
  * Economy handler to interface with Register or Vault directly.
@@ -139,9 +138,11 @@ public class TownyEconomyHandler {
 	 */
 	public static boolean setupEconomy() {
 
-		if (vaultUnlockedPresent())
+		if (vaultUnlockedPresent()) {
 			provider = new VaultUnlockedEconomyProvider();
-		else if (vaultPresent())
+			if (provider.mainAdapter() == null) // We have VaultUnlocked.jar in use with a legacy Vault economy plugin.
+				provider = new VaultEconomyProvider();
+		} else if (vaultPresent())
 			provider = new VaultEconomyProvider();
 		else if (plugin.getServer().getPluginManager().isPluginEnabled("Reserve"))
 			provider = new ReserveEconomyProvider((Reserve) plugin.getServer().getPluginManager().getPlugin("Reserve"));
@@ -165,16 +166,14 @@ public class TownyEconomyHandler {
 		return false;
 	}
 
-	private static Function<Plugin, Boolean> vaultVersionFun = (vault) -> vault.getDescription().getVersion().startsWith("1");
-
 	private static boolean vaultUnlockedPresent() {
 		Plugin vault = plugin.getServer().getPluginManager().getPlugin("Vault");
-		return vault != null && vault.isEnabled() && !vaultVersionFun.apply(vault);
+		return vault != null && vault.isEnabled() && JavaUtil.classExists("net.milkbowl.vault2.economy.Economy");
 	}
 
 	private static boolean vaultPresent() {
 		Plugin vault = plugin.getServer().getPluginManager().getPlugin("Vault");
-		return vault != null && vault.isEnabled() && vaultVersionFun.apply(vault);
+		return vault != null && vault.isEnabled() && JavaUtil.classExists("net.milkbowl.vault.economy.Economy");
 	}
 
 	/**

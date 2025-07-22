@@ -159,7 +159,7 @@ public enum PermissionNodes {
 			TOWNY_COMMAND_TOWN_SET_TAG("towny.command.town.set.tag"),
 			TOWNY_COMMAND_TOWN_SET_JAIL("towny.command.town.set.jail"),
 			TOWNY_COMMAND_TOWN_SET_TITLE("towny.command.town.set.title"),
-			TOWNY_COMMAND_TOWN_SET_TITLE_COLOUR("towny.command.town.set.title.colour"),
+			TOWNY_COMMAND_TOWN_SET_TITLE_COLOUR("towny.command.town.set.title.colours"),
 			TOWNY_COMMAND_TOWN_SET_SURNAME("towny.command.town.set.surname"),
 			TOWNY_COMMAND_TOWN_SET_TAXPERCENTCAP("towny.command.town.set.taxpercentcap"),
 		
@@ -282,6 +282,7 @@ public enum PermissionNodes {
 		TOWNY_COMMAND_RESIDENT_TOGGLE_INFOTOOL("towny.command.resident.toggle.infotool"),
 		TOWNY_COMMAND_RESIDENT_TOGGLE_MAP("towny.command.resident.toggle.map"),
 		TOWNY_COMMAND_RESIDENT_TOGGLE_PLOTGROUP("towny.command.resident.toggle.plotgroup"),
+		TOWNY_COMMAND_RESIDENT_TOGGLE_DISTRICT("towny.command.resident.toggle.district"),
 		TOWNY_COMMAND_RESIDENT_TOGGLE_TOWNBORDER("towny.command.resident.toggle.townborder"),
 		// Border Modes
 		TOWNY_COMMAND_RESIDENT_TOGGLE_CONSTANTPLOTBORDER("towny.command.resident.toggle.constantplotborder"),

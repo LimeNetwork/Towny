@@ -19,13 +19,13 @@ help_7: 'Ayuda del comando plot.'
 help_8: 'Ayuda del comando towny.'
 help_9: 'Ayuda del comando townyadmin.'
 towny_help_0: "Ayuda general para Towny"
-towny_help_1: "Muestra un mapa de los bloques de ciudad cercanos"
-towny_help_2: "Mostrar los precios utilizados con Economía"
+towny_help_1: "Muestra un mapa de los bloques urbanos cercanos"
+towny_help_2: "Muestra los precios utilizados con la economía"
 towny_help_3: "Mostrar puntuaciones altas"
-towny_help_4: "Mostrar tiempo hasta un nuevo día"
+towny_help_4: "Mostrar el tiempo hasta un nuevo día"
 towny_help_5: "Mostrar estadísticas"
 towny_help_6: "Muestra la versión de Towny"
-towny_top_help_0: "Listar a los mejores residentes basados en subcomando."
+towny_top_help_0: "Listar los residentes principales según el subcomando."
 towny_top_help_1: "Listar los mejores propietarios basados en subcomando."
 towny_top_help_2: "Listar adinerados basado en subcomando."
 town_help_1: 'El estado de tu ciudad'
@@ -41,7 +41,7 @@ town_help_10: 'Lista de todos los habitantes conectados en tu ciudad.'
 town_help_13: "Ver una lista de residentes en la ciudad."
 town_help_14: "Ver una lista de rangos en la ciudad."
 town_help_15: "Ver una lista de forajidos en la ciudad."
-town_help_16: "Ver una lista de los grupos de la ciudad."
+town_help_16: "Ver una lista de tipos de parcelas en la ciudad."
 town_help_17: "Ver una lista de tipos de parcelas en la ciudad."
 town_help_18: "Enviar un mensaje a los miembros de la ciudad."
 town_help_19: "Establece tu ciudad a la venta, puede ser comprada por otros jugadores."
@@ -195,7 +195,6 @@ mode_4: 'Canal de la ciudad como chat por defecto'
 mode_5: 'Canal de la nación como chat por defecto'
 mode_6: 'Se pueden colocar %s en bordes enemigos para crear zonas de guerra.'
 plot_perms: 'Usa %s en lugar de %s para los permisos de los terrenos.'
-plot_perms_1: 'Los terrenos de los habitantes no hacen uso de los permisos de los extranjeros.'
 res_list: 'Habitantes'
 res_sing: 'Habitante'
 mayor_sing: 'Alcalde'
@@ -632,7 +631,6 @@ msg_err_not_percentage: '&cLos porcentajes deben ser menores a 100.'
 msg_err_no_economy: '&cLa economía no está habilitada.'
 msg_err_not_block_type: '&cTipo de terreno inválido.'
 msg_not_allowed_join: '&c%s no tiene permitido unirse a una ciudad.'
-msg_offline_no_join: '&c%s está desconectado pero no tiene permitido unirse a una ciudad.'
 msg_err_cannot_perform_action: '&cNo se puede realizar esta acción en %s.'
 msg_npc_flag: '&bLa bandera de NPC ahora está %s para %s.'
 msg_warning_delete: '&4*** ADVERTENCIA, %s SERÁ ELIMINADA MAÑANA DEBIDO A LA FALTA DE FONDOS***'
@@ -645,7 +643,6 @@ msg_err_not_enough_residents_join_nation: '&bLa ciudad de %s no tiene suficiente
 msg_not_enough_residents_no_longer_capital: '&bLa antigua capital del país ya no tiene suficientes residentes para ser la capital de la nación. La nueva capital de la nación es %s.'
 msg_town_not_enough_residents_left_nation: '&bLa ciudad de %s no tiene suficientes residentes para ser miembro de una nación, y abandonó la nación.'
 msg_nation_disbanded_town_not_enough_residents: '&bLa ciudad de %s no tiene suficientes residentes para mantener la nación y causó que la nación caiga en la ruina.'
-msg_not_enough_residents_refunded: '&bSe te reembolsaron $%s debido a que tu nación cayó en la ruina gracias a que no habían suficientes residentes.'
 msg_not_enough_residents_capital: '&bLa ciudad de %s no tiene suficientes residentes para ser la capital de la nación.'
 list_page: '&bPagina %s de %s'
 list_err_not_enough_pages: '&cSolo hay %s paginas disponibles'

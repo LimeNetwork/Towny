@@ -10239,3 +10239,129 @@ v0.92.0.11:
     - ex: /t deposit 1k, will deposit 1000 into the town bank.
     - Closes #7759.
   - Fix ArrayIndexOutOfBoundsException in /plot district add, courtesy of SulkyWhale with PR #7760.
+0.101.1.4:
+  - Fix config comments for plugin.interfacing.web_map.url.
+  - Fix for resident rename weirdness, courtesy of Warrior with PR #7765.
+  - Fixes an issue where a renamed resident cannot access their trusted plots.
+  - Add a new resident district mode and aligned tab completion for /plot district with help and codebase, courtesy of SulkyWhale with PR #7761.
+  - New Command: /res toggle district
+    - When working with districts, toggling this Mode on will make all plots you walk into a part of the last district you set.
+  - New Permission Node: towny.command.resident.toggle.district
+    - Required to use /res toggle district command.
+  - Bump net.kyori:adventure-text-serializer-plain from 4.18.0 to 4.19.0.
+  - Bump net.kyori:adventure-text-minimessage from 4.18.0 to 4.19.0.
+  - Allow admins to bypass the outpost limit meant to stop spawning when a town is over their outpost limit.
+  - Fix outpost limit of zero being able to be bypassed via command.
+  - Fix adjacent district plot error message.
+  - Add the ability to make town and nation ranks require a town or nation level.
+    - The towns.ranks and nations.ranks sections support requiring their town or nation to have a minimum town_level or nation_level.
+    - This means that you can lock ranks behind a town or nation's population. By adding a permission node to a rank you will set this requirement:
+      - towny.town_level_requirement.4
+    - Adding this to a town rank will require the Town to have a town_level of 4 or more to be able to assign that rank to their residents.
+    - If the town lost population the residents with a rank beyond their town's town_level will have that rank removed from them.
+    - When their town regains enough population, that rank will automatically be re-assigned to the resident.
+    - When a town rank does not contain this node it will have no town_level requirement.
+    - Likewise, nation ranks support an optional nation_level requirement, Ex:
+      - towny.nation_level_requirement.4
+    - When added to a nation rank this rank will only be granted when a nation is of level 4 or greater.
+    - When a nation rank does not include this node it will not require any nation_level.
+    - Closes #7681 & #7541.
+  - Fix Town#getLevelNumber returning funny numbers on Towns. Make the code more understandable.
+0.101.1.5:
+  - Fix edge-case scenario where towns that have grown via purchased townblocks are prevented from merging with another town.
+    - Closes #7719.
+  - Fix conquered towns not losing their conquered status when their nation is removed.
+  - Fix Towns reporting an incorrect Town level number.
+  - Fix rare instance of a plugin breaking the PlayerFishEvent.
+0.101.1.6:
+  - Fix which type of cauldron is tested for in CauldronLevelChangeEvents, allowing for the creation of brewery plots.
+  - Add 1.21 potion types as detrimental, courtesy of Warrior with PR #7778.
+  - Automatic Config Edit: ",WIND_CHARGED,WEAVING,INFESTED,OOZING" will be added to the protection.potion_types in the config.yml.
+  - Fix TownRuinUtil trying to pay town bank balances to their nation when economy is not enabled.
+  - Fix neutrality costs not being applied to towns who have an upkeep cost of 0.
+  - Add SHORT_GRASS to the list of plants, fixing an issue with safe teleports.
+  - Add CARPETS to the item lists, fixing an issue with safe teleports.
+  - Fix safe teleport system not looking downwards and sending players up 20 blocks higher than it should.
+0.101.1.7:
+  - Don't log for cancelled pre claim events, courtesy of Warrior with PR #7793.
+    - Closes #7792.
+  - Fix the per_outpost_cost causing very large amount of upkeep on servers with town_plotbased_upkeep set to true.
+    - per_outpost_cost is now added to the upkeep after the upkeep has had all of its multipliers take effect.
+  - Fix the does_adding_colour_codes_require_permission_node config setting not working properly.
+  - Fix border titles not parsing their colour codes.
+    - Closes #7797.
+0.101.1.8:
+  - Cause kicking or outlawing residents from your town to also remove any trusted status they have in your town and your town's plots.
+  - Fix an issue with spawn nodes missing a child node that should have been denied.
+  - Set using bottles and shears on honey-producing blocks to use an ItemUse test instead of a destroy test.
+    - Closes #7804.
+  - Fix renaming plotgroups and districts allowing names which are too long.
+  - Fix other plugins from using CombatUtil#preventFriendlyFire in non-Towny worlds.
+  - Call ascii map static initializer before initial config load, courtesy of Warrior with PR #7808.
+    - Closes #7801.
+  - Update console town help, courtesy of SulkyWhale with PR #7803.
+  - Fix error when /t reslist is run from console without a town argument, courtesy of SulkyWhale with PR #7802.
+0.101.1.9:
+  - Hotfix for startup error present in 0.101.1.8.
+0.101.1.10:
+  - Add per-day, per-outpost upkeep cost to /towny prices when per_outpost_cost is above 0 in the config.
+    - Closes #7816.  
+  - Cause outlawing and enemying to remove trust status in town, plot and trusted town lists.
+    - Also prevents trust being given to outlaws, enemies in plots, towns and trusted town lists.
+    - Clsoes #7818.
+  - Prevent NPE thrown by jail plots which have a null jail, during townblock removal.
+  - Correctly remove bad outpost spawns in getOutpostNames, courtesy of Warrior with PR #7820.
+0.101.1.11:
+  - Fixed missing feedback message when an admin kicks a town from a nation. 
+  - Fix TownRuinUtil choking on 0-townblock towns when determining plot permission changes.
+  - Prevent silverfish from infesting blocks inside towns, courtesy of Warrior with PR #7827.
+0.101.1.12:
+  - Allow townyadvanced_top PAPI placeholders to be handled using a null player.
+    - Closes #7830.
+  - Fix incorrect message seen in the /plot set HelpMenu.
+  - Fix SQL database not correctly loading existing TownyWorld's settings, courtesy of jb0s with PR #7833. (First-Time Contributor!)
+    - Fixes the issue where some worlds always take on the default new world settings.
+0.101.1.13:
+  - Fix extra space added to the "(PVP)" slug seen when entering the wilderness.
+  - Fixes the tabcompleter for TownyAddonCommands.
+    - Closes #7834.
+  - Fix splash potion not applying to mobs, courtesy of SulkyWhale with PR #7839.
+    - Closes #7838.
+  - Allow the confirmation and invitation messages' colouring and formatting to be configurable.
+    - Closes #7849.
+  - New Config Option: invite_system.confirmation_format
+    - Default: [/%s]
+    - The format applied to the clickable confirmations.
+    - e.g [/accept] would appear as default.
+  - New Config Option: invite_system.confirmation_yes_colour
+    - Default: <green>
+    - The colour used to show the accept and confirm commands.
+    - Allowed colours: <black>,<dark_blue>,<dark_green>,<dark_aqua>,<dark_red>,<dark_purple>,<gold>,<gray>,<dark_gray>,<blue>,<green>,<aqua>,<red>,<light_purple>,<yellow>,<white>
+  - New Config Option: invite_system.confirmation_no_colour
+    - Default: <red>
+    - The colour used to show the deny and cancel commands.
+    - Allowed colours: <black>,<dark_blue>,<dark_green>,<dark_aqua>,<dark_red>,<dark_purple>,<gold>,<gray>,<dark_gray>,<blue>,<green>,<aqua>,<red>,<light_purple>,<yellow>,<white>"
+  - Fix hardcoded $ currency symbol in message, courtesy of Warrior with PR #7843.
+0.101.1.14:
+  - Fix Towny using VaultUnlockedEconomyProvider when someone is using VaultUnlocked.jar and a legacy Vault economy plugin.
+  - Fix messages missing their Hovers and non-functional Clickables.
+    - Closes #7852
+  - Update MockBukkit to 4.50.0.
+0.101.1.15:
+  - Add TownCalculateMaxTownBlocksEvent, courtesy of Warrior with PR #7857.
+    - Adds an event that is fired when the max town size is calculated, allowing plugins to change/override it in a more dynamic manner.
+  - Fix throwing TownCalculateMaxTownBlocksEvent async.
+  - Fix resident purge messaging saying it is deleting a resident when its really just trying to remove the resident's town.
+  - Fix inaccurate removal message when inactive residents are only losing their town, also suppress resident-deleted-messages when more than 50 residents are removed at once.
+  - Fix selection gui item ordering being wack, courtesy of Warrior with PR #7866.
+    - /towny switches, /towny itemuse, /towny allowedblocks should maintain a sane ordering.
+  - Fix tasks/timers not being shut down before datasource, courtesy of Warrior with PR #7865.
+  - Re-add switch tests on left click for specified switch items.
+0.101.1.16:
+  - Fix nation plot perms not being given out for un-conquered towns when are_conquered_towns_given_nation_plot_perms is set to true.
+  - Update Adventure for 1.21.6 & 1.21.7 support, courtesy of Warrior with PR #7876.
+0.101.1.17:
+  - Read Ascii map symbols from the config on first load.
+    - Closes #7875.
+0.101.2.0:
+  - Bump version for release.

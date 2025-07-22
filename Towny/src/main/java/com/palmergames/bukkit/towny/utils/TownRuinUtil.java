@@ -81,9 +81,11 @@ public class TownRuinUtil {
 		//Remove town from nation, otherwise after we change the mayor to NPC and if the nation falls, the npc would receive nation refund.
 		final Nation nation = town.getNationOrNull();
 		if (nation != null) {
-			double bankBalance = town.getAccount().getHoldingBalance();
-			if (TownySettings.areRuinedTownsBanksPaidToNation() && bankBalance > 0)
-				town.getAccount().payTo(bankBalance, nation, String.format("Ruined Town (%s) Paid Remaining Bank To Nation", town.getName()));
+			if (TownyEconomyHandler.isActive() && TownySettings.areRuinedTownsBanksPaidToNation()) {
+				double bankBalance = town.getAccount().getHoldingBalance();
+				if (bankBalance > 0)
+					town.getAccount().payTo(bankBalance, nation, String.format("Ruined Town (%s) Paid Remaining Bank To Nation", town.getName()));
+			}
 			town.removeNation();
 		}
 
@@ -300,7 +302,12 @@ public class TownRuinUtil {
 		if (hoursLeft >= hoursTotal)
 			return 0L;
 
+		if (hoursLeft == 0)
+			return town.getNumTownBlocks();
+
 		int numTownBlocks = town.getNumTownBlocks();
+		if (numTownBlocks == 0)
+			return 0L;
 		int townBlocksPerHour = numTownBlocks / hoursLeft;
 		double end = numTownBlocks > hoursTotal
 			? townBlocksPerHour * timeSinceRuining       // We will be opening perms on 1 or more townblocks every hour.

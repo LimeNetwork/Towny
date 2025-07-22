@@ -328,8 +328,9 @@ public class TownyPlayerListener implements Listener {
 			return;
 		
 		Action action = event.getAction();
-		if(action != Action.RIGHT_CLICK_BLOCK && action != Action.RIGHT_CLICK_AIR && action != Action.PHYSICAL)
+		if(actionIsNotRightClickOrPhysical(action) && actionIsNotLeftClickThatCountsAsSwitch(event, action)) {
 			return;
+		}
 		
 		Player player = event.getPlayer();
 		Block clickedBlock = event.getClickedBlock();
@@ -373,7 +374,7 @@ public class TownyPlayerListener implements Listener {
 
 				/*
 				 * Test stripping logs, scraping copper blocks, dye-able signs,
-				 * glass bottles, flint&steel on TNT and shears on beehomes,
+				 * flint&steel on TNT and shears on pumpkins,
 				 * catches hoes taking dirt from Rooted Dirt blocks,
 				 * prevents players from using brushes on brush-able blocks (suspicious sand, suspicious gravel)
 				 * 
@@ -382,7 +383,7 @@ public class TownyPlayerListener implements Listener {
 				if ((ItemLists.AXES.contains(item) && (ItemLists.UNSTRIPPED_WOOD.contains(clickedMat) || ItemLists.WAXED_BLOCKS.contains(clickedMat) || ItemLists.WEATHERABLE_BLOCKS.contains(clickedMat))) ||
 					(ItemLists.DYES.contains(item) && ItemLists.SIGNS.contains(clickedMat)) ||
 					(item == Material.FLINT_AND_STEEL && clickedMat == Material.TNT) ||
-					((item == Material.GLASS_BOTTLE || item == Material.SHEARS) && (clickedMat == Material.BEE_NEST || clickedMat == Material.BEEHIVE || clickedMat == Material.PUMPKIN)) ||
+					(item == Material.SHEARS && clickedMat == Material.PUMPKIN) ||
 					clickedMat.getKey().equals(NamespacedKey.minecraft("rooted_dirt")) && ItemLists.HOES.contains(item) ||
 					ItemLists.BRUSHABLE_BLOCKS.contains(clickedMat) && item == Material.BRUSH) { 
 
@@ -426,9 +427,12 @@ public class TownyPlayerListener implements Listener {
 				}
 
 				/*
-				 * Prevents players using wax on signs
+				 * Prevents players using wax on signs, harvesting honey/honeycomb
 				 */
-				if (item == Material.HONEYCOMB && ItemLists.SIGNS.contains(clickedMat) && !isSignWaxed(clickedBlock)) {
+				if (
+					(item == Material.HONEYCOMB && ItemLists.SIGNS.contains(clickedMat) && !isSignWaxed(clickedBlock)) ||
+					((item == Material.GLASS_BOTTLE || item == Material.SHEARS) && (clickedMat == Material.BEE_NEST || clickedMat == Material.BEEHIVE))
+					) {
 					if (!TownyActionEventExecutor.canItemuse(player, clickedBlock.getLocation(), clickedMat)) {
 						event.setCancelled(true);
 						return;
@@ -482,6 +486,29 @@ public class TownyPlayerListener implements Listener {
 					!TownyActionEventExecutor.canDestroy(player, clickedBlock.getLocation(), clickedMat))
 				event.setCancelled(true);
 		}
+	}
+
+	/**
+	 * Is the action one that involves left-clicking on a Switch block? This is
+	 * useful for protecting (usually) modded blocks that can be used via left
+	 * clicks.
+	 * 
+	 * @param event  PlayerInteractEvent causing a switch test.
+	 * @param action Action that has to be LEFT_CLICK_BLOCK for this to count.
+	 * @return true if the player is left clicking a block that is technically a
+	 *         switch_id in Towny.
+	 */
+	private boolean actionIsNotLeftClickThatCountsAsSwitch(PlayerInteractEvent event, Action action) {
+		return action != Action.LEFT_CLICK_BLOCK || !event.hasBlock() || !TownySettings.isSwitchMaterial(event.getClickedBlock().getType(), event.getClickedBlock().getLocation());
+	}
+
+	/**
+	 * Is the action something we don't want to worry about when we're dealing with something like honey comb and a sign, or candles and cake when testing PlayerInteractEvents.
+	 * @param action Action that player is making for this to matter.
+	 * @return true if the action is a right click or physical Action.
+	 */
+	private boolean actionIsNotRightClickOrPhysical(Action action) {
+		return action != Action.RIGHT_CLICK_BLOCK && action != Action.RIGHT_CLICK_AIR && action != Action.PHYSICAL;
 	}
 
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -880,6 +907,10 @@ public class TownyPlayerListener implements Listener {
 			Player player = event.getPlayer();
 			Entity caught = event.getCaught();
 			boolean test = false;
+
+			// Required because some times a plugin will throw the PlayerFishEvent with a null caught.
+			if (caught == null)
+				return;
 			
 			// Caught players are tested for pvp at the location of the catch.
 			if (caught.getType().equals(EntityType.PLAYER)) {

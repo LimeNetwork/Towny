@@ -561,9 +561,10 @@ public enum HelpMenu {
 	TOWN_HELP_CONSOLE {
 		@Override
 		protected MenuBuilder load() {
-			return new MenuBuilder("town", Translatable.of("town_help_1"))
+			return new MenuBuilder("town")
 				.add("[town]", Translatable.of("town_help_3"))
-				.add("list", Translatable.of("town_help_26"));
+				.add("list", Translatable.of("town_help_26"))
+				.add("reslist [town]", Translatable.of("town_help_13"));
 		}
 	},
 	
@@ -920,8 +921,7 @@ public enum HelpMenu {
 				.add("perm reset", Translatable.of("plot_set_help_7"))
 				.add("Eg: /plot set perm ally off")
 				.add("Eg: /plot set perm friend build on")
-				.add(Translation.of("plot_perms", "'friend'", "'resident'"))
-				.add(Translatable.of("plot_perms_1"));
+				.add(Translation.of("plot_perms", "'friend'", "'resident'"));
 		}
 	},
 

@@ -311,14 +311,13 @@ public class TownyEntityListener implements Listener {
 		if (!TownyAPI.getInstance().isTownyWorld(event.getEntity().getWorld()))
 			return;
 		
-		if (!hasDetrimentalEffects(event.getPotion().getEffects()))
+		ThrownPotion potion = event.getPotion();
+		
+		if (!hasDetrimentalEffects(potion.getEffects()))
 			return;
 		
-		for (LivingEntity defender : event.getAffectedEntities()) {
-			if (CombatUtil.preventDamageCall(event.getPotion(), defender, DamageCause.MAGIC)) {
-				event.setIntensity(defender, -1.0);
-			}
-		}
+		if (discardSplashPotion(potion))
+			event.setCancelled(true);
 	}
 
 	/**
@@ -479,6 +478,7 @@ public class TownyEntityListener implements Listener {
 	 *  Water being used to put out campfires.
 	 *  Boats breaking lilypads.
 	 *  Crop Trampling.
+	 *  Silverfish infesting blocks inside towns.
 	 * 
 	 * Because we use ignoreCancelled = true we dont need to worry about setting the
 	 * cancelled state to false overriding other plugins.
@@ -543,6 +543,8 @@ public class TownyEntityListener implements Listener {
 				event.setCancelled(!BorderUtil.allowedMove(bps.getBlock(), block));
 			else if (potion.getShooter() instanceof Player player)
 				event.setCancelled(!TownyActionEventExecutor.canDestroy(player, block));
+		} else if (entityType == EntityType.SILVERFISH && ItemLists.INFESTED_BLOCKS.contains(event.getTo()) && !TownyAPI.getInstance().isWilderness(event.getBlock().getLocation())) {
+			event.setCancelled(true);
 		}
 	}
 
@@ -1009,6 +1011,31 @@ public class TownyEntityListener implements Listener {
 				final WorldCoord current = WorldCoord.parseWorldCoord(effectCloud.getWorld().getName(), x, z);
 				final TownBlock townBlock = current.getTownBlockOrNull();
 				
+				if (townyWorld != null && CombatUtil.preventPvP(townyWorld, townBlock))
+					return true;
+				
+				lastChecked = current;
+			}
+		}
+		
+		return false;
+	}
+
+	@ApiStatus.Internal
+	private static boolean discardSplashPotion(ThrownPotion potion) {
+		final TownyWorld townyWorld = TownyAPI.getInstance().getTownyWorld(potion.getWorld());
+		final Location loc = potion.getLocation();
+		int radius = 4;
+		WorldCoord lastChecked = null;
+
+		for (int x = loc.getBlockX() - radius; x < loc.getBlockX() + radius; x++ ) {
+			for (int z = loc.getBlockZ() - radius; z < loc.getBlockZ() + radius; z++ ) {
+				if (lastChecked != null && lastChecked.getX() == Coord.toCell(x) && lastChecked.getZ() == Coord.toCell(z))
+					continue;
+
+				final WorldCoord current = WorldCoord.parseWorldCoord(potion.getWorld().getName(), x, z);
+				final TownBlock townBlock = current.getTownBlockOrNull();
+
 				if (townyWorld != null && CombatUtil.preventPvP(townyWorld, townBlock))
 					return true;
 				

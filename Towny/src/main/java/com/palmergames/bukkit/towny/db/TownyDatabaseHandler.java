@@ -857,6 +857,7 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 			
 			// Make an oldResident with the previous name for use in searching friends/outlawlists/deleting the old resident file.
 			Resident oldResident = new Resident(oldName);
+			oldResident.setUUID(resident.getUUID());
 			
 			// Search and update all friends lists
 			Set<Resident> residentsToSave = new HashSet<>();
@@ -867,7 +868,7 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 					residentsToSave.add(toCheck);
 				}
 			}
-			residentsToSave.forEach(res -> res.save());
+			residentsToSave.forEach(Resident::save);
 
 			// Search and update all town outlaw, trustedresidents lists.
 			Set<Town> townsToSave = new HashSet<>();
@@ -883,7 +884,14 @@ public abstract class TownyDatabaseHandler extends TownyDataSource {
 					townsToSave.add(toCheckTown);
 				}
 			}
-			townsToSave.forEach(town -> town.save());
+			townsToSave.forEach(Town::save);
+
+			new ArrayList<>(universe.getTownBlocks().values()).stream()
+				.filter(tb -> tb.hasTrustedResident(oldResident))
+				.forEach(tb -> {
+					tb.removeTrustedResident(oldResident);
+					tb.addTrustedResident(resident);
+				});
 
 			//delete the old resident and tidy up files
 			deleteResident(oldResident);

@@ -267,7 +267,6 @@ mode_5: 'Default chat to nation channel'
 mode_6: 'Can place %s in enemy borders to make warzones.'
 
 plot_perms: 'Use %s instead of %s for plot permissions.'
-plot_perms_1: 'Resident plots don''t make use of outsider permissions.'
 
 res_list: 'Residents'
 res_sing: 'Resident'
@@ -520,7 +519,7 @@ msg_you_paid_plottax_to_town: '&bYou paid plot taxes totalling %s to the town of
 msg_bankrupt_town: ' couldn''t afford to remain a town.'
 msg_bankrupt_nation: ' couldn''t afford to remain a nation.'
 msg_nation_not_peaceful: '&bNation couldn''t afford it''s peaceful state.'
-msg_nation_cant_peaceful: '&bNation couldn''t afford to become a peaceful nation. You must be able to pay % daily.'
+msg_nation_cant_peaceful: '&bNation couldn''t afford to become a peaceful nation. You must be able to pay %s daily.'
 msg_peaceful_disabled: '&bNation peace is disabled globally.'
 msg_you_paid: '&bYou paid %s to set peaceful status.'
 msg_nation_set_peace: '&bSuccessfully changed nation''s state.'
@@ -550,6 +549,7 @@ msg_nation_kicked_by: '&bYour town was kicked from the nation by %s.'
 msg_town_left_nation: '&bYour town left the nation of %s.'
 msg_nation_town_left: '&bThe town of %s left your nation.'
 msg_nation_kicked: '&b%s kicked %s from the nation.'
+msg_nation_you_kicked: '&bYou kicked %s from the nation.'
 msg_raised_ass: '&b%s raised %s to %s assistants.'
 msg_lowered_to_res_by: '&bYou were demoted to a regular resident by %s.'
 msg_lowered_to_res: '&b%s demoted %s to regular resident.'
@@ -764,7 +764,6 @@ msg_err_not_percentage: '&cPercentages must be below 100.'
 msg_err_no_economy: '&cEconomy has not been turned on.'
 msg_err_not_block_type: '&cThat is not a valid plot type!'
 msg_not_allowed_join: '&c%s is not permitted to join a town.'
-msg_offline_no_join: '&c%s is offline but using permissions so can''t join a town.'
 msg_err_cannot_perform_action: '&cCannot perform this action in the %s.'
 msg_npc_flag: '&bNPC flag is now %s for %s.'
 
@@ -781,7 +780,7 @@ msg_err_not_enough_residents_join_nation: '&bThe town %s does not have enough re
 msg_not_enough_residents_no_longer_capital: '&bThe nation''s old capital no longer has enough residents to be the capital of the nation. The new capital of the nation is %s.'
 msg_town_not_enough_residents_left_nation: '&bThe town %s no longer has enough residents to be a member of a nation, and has been removed from the nation.'
 msg_nation_disbanded_town_not_enough_residents: '&bThe town %s no longer has enough residents to run the nation and has forced the nation to disband.'
-msg_not_enough_residents_refunded: '&bYou have been refunded $%s for your nation being disbanded due to not having enough residents.'
+msg_not_enough_residents_refunded: '&bYou have been refunded %s for your nation being disbanded due to not having enough residents.'
 msg_not_enough_residents_capital: '&bThe town %s does not have enough residents to be the capital of the nation.'
 
 list_page: '&bPage %s of %s'
@@ -798,6 +797,7 @@ msg_you_have_been_given_rank: 'You have been granted the %s rank of %s.'
 msg_you_have_given_rank: 'You have granted the %s rank of %s to %s.'
 msg_resident_not_your_town: 'That resident isn''t a member of a town!'
 msg_resident_already_has_rank: '%s already holds this %s rank.'
+msg_town_or_nation_level_not_high_enough_for_this_rank: "Your %s level is not high enough to assign the %s rank. Your %s's Level: %s/%s required."
 msg_you_have_had_rank_taken: 'You have been demoted from the %s rank of %s.'
 msg_you_have_taken_rank_from: 'You have removed the %s rank of %s from %s.'
 msg_resident_doesnt_have_rank: '%s doesn''t hold this %s rank.'
@@ -1525,6 +1525,7 @@ towny_prices_overclaimed_upkeep: '&e[Overclaimed Upkeep] &2Town: &a%s'
 towny_prices_claiming_townblock: '&e[Claiming] &2TownBlock: &a%s'
 towny_prices_claiming_townblock_increase: ' &8| &2Increase per TownBlock: &a+%s'
 towny_prices_claiming_outposts: '&e[Claiming] &2Outposts: &a%s'
+towny_prices_outposts_upkeept: '&7Outposts have an additional per-day, per-outpost upkeep cost: &a%s'
 towny_prices_upkeep_based_on: '&7Town upkeep is based on &athe %s'
 towny_prices_upkeep_num_plots: 'number of plots.'
 towny_prices_upkeep_town_level: 'town level (num residents.)'
@@ -1721,6 +1722,8 @@ your_town_has_been_invited_to_join_nation: 'Your town has been invited to join t
 msg_err_no_one_to_purge: '&bThere are no inactive members to purge.'
 msg_purging_will_remove_the_following_residents: '&bPlease confirm you want to purge the following residents: %s'
 msg_purge_complete_x_removed: '&bPurge complete, %s residents removed.'
+msg_purge_complete_x_removed_from_towns: '&bPurge complete, %s inactive residents removed from towns.'
+msg_purge_reached_50_residents: '&bPurge has reached 50, further resident deletions will not be logged to reduce spam.'
 msg_err_days_must_be_greater_than_0: 'Days must be greater than zero.'
 msg_err_outlawed_players_no_teleport: '&4You are outlawed in the town you are currently in and cannot teleport!'
 msg_err_you_cannot_use_command_while_in_outlaw_town: '&4You cannot use that command while in a town you are outlawed in.'
@@ -2305,6 +2308,8 @@ msg_warn_are_you_sure_you_want_to_transfer_nation_ownership: "<red>Are you sure 
 msg_warn_town_already_capital: "<red>The town of %s is already the nation capital."
 msg_min_adjacent_blocks: 'You are required to have at least %s adjacent town blocks. There is only %s.'
 
+msg_min_adjacent_district_blocks: 'You are required to have at least %s adjacent district plots.'
+
 # Shown when a player with /plot evict permissions uses /plot claim on an owned but not for sale plot, please preserve comma space at the start when translating.
 msg_plot_claim_consider_evict_instead: ', perhaps you are looking for /plot evict instead?'
 
@@ -2626,3 +2631,11 @@ titlemsg_pay_your_bail_title: "Pay your bail: %s"
 titlemsg_pay_your_bail_subtitle: "/res jail paybail"
 
 msg_not_for_sale: "Not for sale."
+
+msg_err_you_cannot_add_trust_on_outlaw: "You cannot trust a player who is outlawed in your town."
+
+msg_err_you_cannot_add_trust_on_enemy: "You cannot trust a player who is part of an enemy nation."
+
+msg_err_you_cannot_add_towntrust_on_outlaw: "You cannot trust a town who has residents which are outlawed by your town."
+
+msg_err_you_cannot_add_towntrust_on_enemy: "You cannot trust a town who is part of an enemy nation."

@@ -56,6 +56,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -331,6 +332,10 @@ public class Town extends Government implements TownBlockOwner {
 
 		if (nation == null) {
 			this.nation = null;
+			if (isConquered()) {
+				setConquered(false);
+				setConqueredDays(0);
+			}
 			return;
 		}
 
@@ -902,7 +907,7 @@ public class Town extends Government implements TownBlockOwner {
 				townBlock.setOutpost(false);
 				townBlock.save();
 			}
-			if (townBlock.isJail()) {
+			if (townBlock.isJail() && townBlock.getJail() != null) {
 				removeJail(townBlock.getJail());
 			}
 			
@@ -1050,12 +1055,15 @@ public class Town extends Government implements TownBlockOwner {
 	public List<String> getOutpostNames() {
 		List<String> outpostNames = new ArrayList<>();
 		int i = 0;
-		for (Location loc : getAllOutpostSpawns()) {
+		
+		final Iterator<Position> outpostSpawnIterator = this.outpostSpawns.iterator();
+		while (outpostSpawnIterator.hasNext()) {
 			i++;
-			TownBlock tboutpost = TownyAPI.getInstance().getTownBlock(loc);
+			final Position pos = outpostSpawnIterator.next();
+			TownBlock tboutpost = TownyAPI.getInstance().getTownBlock(pos.worldCoord());
 
 			if (tboutpost == null) {
-				removeOutpostSpawn(loc);
+				outpostSpawnIterator.remove();
 				save();
 				continue;
 			}
@@ -1880,6 +1888,7 @@ public class Town extends Government implements TownBlockOwner {
 	public TownLevel getTownLevel() {
 		return TownySettings.getTownLevel(this);
 	}
+
 	/**
 	 * Get the Town's current TownLevel number, based on its population.
 	 * <p>
@@ -1899,8 +1908,8 @@ public class Town extends Government implements TownBlockOwner {
 	 */
 	public int getLevelNumber() {
 		int townLevelNumber = getManualTownLevel() > -1
-				? TownySettings.getTownLevelWhichIsManuallySet(getManualTownLevel())
-				: TownySettings.getTownLevelFromGivenInt(getNumResidents(), this);
+				? Math.min(getManualTownLevel(), TownySettings.getTownLevelMax())
+				: TownySettings.getTownLevelWhichIsNotManuallySet(getNumResidents(), this);
 
 		TownCalculateTownLevelNumberEvent tctle = new TownCalculateTownLevelNumberEvent(this, townLevelNumber);
 		BukkitTools.fireEvent(tctle);

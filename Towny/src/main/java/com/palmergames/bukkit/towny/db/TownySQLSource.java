@@ -570,7 +570,7 @@ public final class TownySQLSource extends TownyDatabaseHandler {
 
 		try (Connection connection = getConnection();
 			 Statement s = connection.createStatement();
-			 ResultSet rs = s.executeQuery("SELECT name FROM " + tb_prefix + "WORLDS")) {
+			 ResultSet rs = s.executeQuery("SELECT name, uuid FROM " + tb_prefix + "WORLDS")) {
 			
 			while (rs.next()) {
 				final String name = rs.getString("name");
@@ -1846,7 +1846,7 @@ public final class TownySQLSource extends TownyDatabaseHandler {
 					
 					if (town == null) {
 						TownyMessaging.sendErrorMsg("TownBlock file contains unregistered Town: " + line
-							+ " , deleting " + townBlock.getWorld().getName() + "," + townBlock.getX() + ","
+							+ ", deleting " + townBlock.getWorld().getName() + "," + townBlock.getX() + ","
 							+ townBlock.getZ());
 						universe.removeTownBlock(townBlock);
 						deleteTownBlock(townBlock);
@@ -2312,8 +2312,8 @@ public final class TownySQLSource extends TownyDatabaseHandler {
 			if (!TownySettings.getDefaultResidentAbout().equals(resident.getAbout()))
 				res_hm.put("about", resident.getAbout());
 			res_hm.put("town", resident.hasTown() ? resident.getTown().getName() : "");
-			res_hm.put("town-ranks", resident.hasTown() ? StringMgmt.join(resident.getTownRanks(), "#") : "");
-			res_hm.put("nation-ranks", resident.hasTown() ? StringMgmt.join(resident.getNationRanks(), "#") : "");
+			res_hm.put("town-ranks", resident.hasTown() ? StringMgmt.join(resident.getTownRanksForSaving(), "#") : "");
+			res_hm.put("nation-ranks", resident.hasTown() ? StringMgmt.join(resident.getNationRanksForSaving(), "#") : "");
 			res_hm.put("friends", StringMgmt.join(resident.getFriends(), "#"));
 			res_hm.put("protectionStatus", resident.getPermissions().toString().replaceAll(",", "#"));
 

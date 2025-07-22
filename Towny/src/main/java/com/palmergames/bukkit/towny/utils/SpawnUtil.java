@@ -454,7 +454,7 @@ public class SpawnUtil {
 					yield CompletableFuture.completedFuture(player.getWorld().getSpawnLocation());
 			case TOWN:
 				if (outpost)
-					yield adaptSpawnLocation(getOutpostSpawnLocation(town, split), player);
+					yield adaptSpawnLocation(getOutpostSpawnLocation(player, town, split), player);
 				else
 					yield adaptSpawnLocation(town.getSpawn(), player);
 			case NATION:
@@ -513,13 +513,12 @@ public class SpawnUtil {
 			temp = temp.add(0,1,0);
 		}
 		
-		// 0 1 -1 2 -2 ...
-		for (int i = 0; Math.abs(i) < range - 2; i = next(i) ) {
-			// value 	 = bottom block
+		// 1 -1 2 -2 ...
+		for (int y = 0, steps = 1; steps <= 40; y = next(y), steps++) {
+			// value     = bottom block
 			// value + 1 = middle block
 			// value + 2 = top block
-			int value = i + range;
-			
+			int value = y + range;
 			if(!isSolidMap.get(value) || isLiquidMap.get(value)) {
 				continue;
 			}
@@ -532,7 +531,7 @@ public class SpawnUtil {
 				continue;
 			}
 			
-			return location.clone().add(0, value + 1, 0);
+			return location.clone().add(0, y + 1, 0);
 		}
 		
 		TownyMessaging.sendErrorMsg(p, Translatable.of("msg_spawn_fail_safe_teleport"));
@@ -582,40 +581,43 @@ public class SpawnUtil {
 	 * Complicated code that parses the given split to a named, numbered or
 	 * unnumbered outpost.
 	 * 
+	 * @param player The Player doing the teleport.
 	 * @param town  Town which is being spawned to.
 	 * @param split String[] arguments to parse the outpost location from.
 	 * @return Location of the town's outpost spawn.
 	 * @throws TownyException thrown when there are no outposts, or the outpost
 	 *                        limit was capped.
 	 */
-	private static Location getOutpostSpawnLocation(Town town, String[] split) throws TownyException {
+	private static Location getOutpostSpawnLocation(Player player, Town town, String[] split) throws TownyException {
 		if (!town.hasOutpostSpawn())
 			throw new TownyException(Translatable.of("msg_err_outpost_spawn"));
 
-		// No arguments, send them to the first outpost.
-		if (split.length == 0)
-			return town.getOutpostSpawn(1);
-
 		Integer index = null;
-		String userInput = split[split.length - 1];
-		try {
-			if (!userInput.contains("name:")) {
-				index = Integer.parseInt(userInput);
-			} else { // So now it say's name:123
-				index = getOutpostIndexFromName(town, index, userInput.replace("name:", "").replace("_", " "));
-			}
-		} catch (NumberFormatException e) {
-			// invalid entry so assume the first outpost, also note: We DO NOT HAVE a number
-			// now, which means: if you type abc, you get brought to that outpost.
-			// Let's consider the fact however: an outpost name begins with "123" and there
-			// are 123 Outposts. Then we put the prefix name:123 and that solves that.
-			index = getOutpostIndexFromName(town, index, userInput.replace("_", " "));
-		} catch (ArrayIndexOutOfBoundsException i) {
-			// Number not present so assume the first outpost.
+		// No arguments or negative number, send them to the first outpost.
+		if (split.length <= 0)
 			index = 1;
+		else {
+			String userInput = split[split.length - 1];
+			try {
+				if (!userInput.contains("name:")) {
+					index = Integer.parseInt(userInput);
+				} else { // So now it say's name:123
+					index = getOutpostIndexFromName(town, index, userInput.replace("name:", "").replace("_", " "));
+				}
+			} catch (NumberFormatException e) {
+				// invalid entry so assume the first outpost, also note: We DO NOT HAVE a number
+				// now, which means: if you type abc, you get brought to that outpost.
+				// Let's consider the fact however: an outpost name begins with "123" and there
+				// are 123 Outposts. Then we put the prefix name:123 and that solves that.
+				index = getOutpostIndexFromName(town, index, userInput.replace("_", " "));
+			} catch (ArrayIndexOutOfBoundsException i) {
+				// Number not present so assume the first outpost.
+				index = 1;
+			}
 		}
 
-		if (TownySettings.isOutpostLimitStoppingTeleports() 
+		if (!TownyUniverse.getInstance().getPermissionSource().isTownyAdmin(player)
+			&& TownySettings.isOutpostLimitStoppingTeleports() 
 			&& TownySettings.isOutpostsLimitedByLevels()
 			&& town.isOverOutpostLimit() 
 			&& Math.max(1, index) > town.getOutpostLimit()) {
