@@ -341,6 +341,12 @@ public enum ConfigNodes {
 			"true",
 			"",
 			"# Do new worlds disable creatures trampling crops, by default?"),
+	NWS_JAILING_ENABLE(
+			"new_world_settings.jailing_enabled",
+			"true",
+			"",
+			"# This section is applied to new worlds as default settings when new worlds are detected.",
+			"# Whether to allow players in this world to be jailed or not"),
 	NWS_PLOT_MANAGEMENT_HEADER(
 			"new_world_settings.plot_management",
 			"",
@@ -1620,6 +1626,13 @@ public enum ConfigNodes {
 		"",
 		"# If enabled, the world name placeholder will be replaced with the world key instead of the Bukkit name.",
 		"# This should be enabled if you use SquareMap."
+	),
+
+	PLUGIN_WEB_MAP_SHOW_LINK_FOR_NONPUBLIC_TOWNS(
+		"plugin.interfacing.web_map.non_public_towns_show_map_link",
+		"false",
+		"",
+		"# If enabled, non-public towns will show a link to their map location in the town status screen."
 	),
 	
 	PLUGIN_WEB_MAP_URL(

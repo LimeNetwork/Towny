@@ -400,6 +400,8 @@ public enum PermissionNodes {
 	TOWNY_COMMAND_TOWNYADMIN_RESIDNET_DELETE("towny.command.townyadmin.resident.delete"),
 	TOWNY_COMMAND_TOWNYADMIN_ECO("towny.command.townyadmin.eco.*"),
 	TOWNY_COMMAND_TOWNYADMIN_ECO_DEPOSITALL("towny.command.townyadmin.eco.depositall"),
+	TOWNY_COMMAND_TOWNYADMIN_ECO_DEPOSITALLTOWNS("towny.command.townyadmin.eco.depositalltowns"),
+	TOWNY_COMMAND_TOWNYADMIN_ECO_DEPOSITALLNATIONS("towny.command.townyadmin.eco.depositallnations"),
 	TOWNY_COMMAND_TOWNYADMIN_ECO_RESETBANKS("towny.command.townyadmin.eco.resetbanks"),
 	TOWNY_COMMAND_TOWNYADMIN_ECO_CONVERT("towny.command.townyadmin.eco.convert"),
 	TOWNY_COMMAND_TOWNYADMIN_ECO_INFO("towny.command.townyadmin.eco.info"),
@@ -448,6 +450,7 @@ public enum PermissionNodes {
 		TOWNY_COMMAND_TOWNYWORLD_TOGGLE_UNCLAIMBLOCKDELETE("towny.command.townyworld.toggle.unclaimblockdelete"),
 		TOWNY_COMMAND_TOWNYWORLD_TOGGLE_UNCLAIMENTITYDELETE("towny.command.townyworld.toggle.unclaimentitydelete"),
 		TOWNY_COMMAND_TOWNYWORLD_TOGGLE_WILDERNESSUSE("towny.command.townyworld.toggle.wildernessuse"),
+		TOWNY_COMMAND_TOWNYWORLD_TOGGLE_JAILING("towny.command.townyworld.toggle.jailing"),
 
 	/*
 	 * Towns Spawning Nodes.
