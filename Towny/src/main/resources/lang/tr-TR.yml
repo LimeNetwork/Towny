@@ -12,7 +12,7 @@ help_0: 'Genel Towny Yardımı'
 help_1: 'Towny hakkında daha fazla bilgi edinmek için aşağıdaki komutları deneyin.'
 help_2: 'Kasaba Sohbeti'
 help_3: 'Ulus Sohbeti'
-help_4: 'Towny komut listesi.'
+help_4: 'Oyuncu komut listesi.'
 help_5: 'Towny komut listesi'
 help_6: 'Towny komut listesi.'
 help_7: 'Towny komut listesi.'
@@ -226,6 +226,7 @@ world_toggle_help_8: "Bu dünyada, talep geri alındığında geri alma özelli�
 world_toggle_help_9: "Patlamaları aç yada kapat."
 world_toggle_help_10: "Bu dünyada plot-clear-deletes-blocks komutunu açıp kapatın."
 world_toggle_help_11: "Bu dünyada plot-unclaiming-deletes-blocks özelliğini açın/kapatın."
+world_toggle_help_12: "Toggle on/off if being jailed is enabled in this world."
 townyadmin_help_1: 'Bu kasaba bloğunun hak talebini kaldır'
 townyadmin_help_2: 'Çevrenizdeki hak talebinden vazgeçmeye çalışın.'
 admin_panel_1: "Yardım için /ta set ? komutunu kullanın"
@@ -294,6 +295,8 @@ townyadmin_database_help_1: "Veritabanını kaydetmeye zorla."
 townyadmin_database_help_2: "Her sakinin tüm unvan ve soyadlarını kaldırır."
 ta_plot_help_0: "Bir oyuncu için arsa talep edin."
 ta_plot_help_1: "View the metadata stored in the plot you are stood in."
+ta_plot_help_2: "Arsa meta verisi anahtarını ve değerini ayarlayın."
+ta_plot_help_3: "Anahtara göre meta veri ekleyin veya kaldırın."
 ta_resident_help_0: "Sakinin ismini değiştirin."
 ta_resident_help_1: "Bir arkadaş ekle veya sil."
 ta_resident_help_2: "Arkadaş listenizi listeleyin veya temizleyin."
@@ -303,7 +306,9 @@ ta_set_help_2: "Bir milletin başkentini seç."
 ta_set_help_3: "Bir milletin millet alanını ayarla."
 ta_set_help_4: "Bir sakinin başlığını ayarla."
 ta_set_help_5: "Bir sakının soy ismini ayarla."
+ta_set_help_6: "Bir arsayı başka bir kasabaya devre eder."
 ta_set_help_7: "Bir kasabanın kurucu adını belirleyin."
+ta_townmeta_help_3: "Add or remove a metadata by key from the town."
 ta_reload_help_0: "Kayıtları yeniden yükle."
 ta_reload_help_1: "configi yeniden yükle."
 ta_reload_help_2: "Dil dosyalarını yeniden yükle."

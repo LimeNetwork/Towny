@@ -50,14 +50,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class Resident extends TownyObject implements InviteReceiver, EconomyHandler, TownBlockOwner, Identifiable, ForwardingAudience.Single {
 	private List<Resident> friends = new ArrayList<>();
 	// private List<Object[][][]> regenUndo = new ArrayList<>(); // Feature is disabled as of MC 1.13, maybe it'll come back.
-	private UUID uuid = null;
+	private final UUID uuid;
 	private Town town = null;
 	private long lastOnline;
 	private long registered;
@@ -88,9 +87,16 @@ public class Resident extends TownyObject implements InviteReceiver, EconomyHand
 	private String districtName = null;
 	protected CachedTaxOwing cachedTaxOwing = null;
 
-	public Resident(String name) {
+	@ApiStatus.Internal
+	public Resident(String name, UUID uuid) {
 		super(name);
+		this.uuid = uuid;
 		permissions.loadDefault(this);
+	}
+
+	@Deprecated(since = "0.102.0.4")
+	public Resident(String name) {
+		this(name, UUID.randomUUID());
 	}
 
 	@Override
@@ -99,12 +105,12 @@ public class Resident extends TownyObject implements InviteReceiver, EconomyHand
 			return true;
 		if (!(other instanceof Resident otherResident))
 			return false;
-		return this.getName().equals(otherResident.getName()); // TODO: Change this to UUID when the UUID database is in use.
+		return this.getUUID().equals(otherResident.getUUID());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(getUUID(), getName());
+		return this.uuid.hashCode();
 	}
 
 	public void setLastOnline(long lastOnline) {
@@ -132,9 +138,12 @@ public class Resident extends TownyObject implements InviteReceiver, EconomyHand
 		return uuid;		
 	}
 	
+	/**
+	 * @deprecated Changing UUIDs of Resident objects is no longer supported.
+	 */
+	@Deprecated(since = "0.102.0.4")
 	@Override
 	public void setUUID(UUID uuid) {
-		this.uuid = uuid;
 	}
 	
 	public boolean hasUUID() {
@@ -344,7 +353,7 @@ public class Resident extends TownyObject implements InviteReceiver, EconomyHand
 		} catch (EmptyTownException e) {
 			if (!townDeleted) {
 				TownyMessaging.sendMsg(Translatable.of("msg_town_being_deleted_because_no_residents", town.getName()));
-				TownyUniverse.getInstance().getDataSource().removeTown(town, DeleteTownEvent.Cause.NO_RESIDENTS, null, false);
+				TownyUniverse.getInstance().getDataSource().removeTown(town, DeleteTownEvent.Cause.NO_RESIDENTS, null, TownySettings.getTownRuinsEnabled() && TownySettings.areEmptyTownsBecomingRuins());
 			}
 		}
 
@@ -558,6 +567,10 @@ public class Resident extends TownyObject implements InviteReceiver, EconomyHand
 		ResidentModeHandler.resetModes(this, notify);
 	}
 	
+	/**
+	 * Get the {@link Player} of the Resident when the Resident is Online.
+	 * @return the resident's Player when the player is online.
+	 */
 	@Nullable
 	public Player getPlayer() {
 		return BukkitTools.getPlayerExact(getName());
@@ -979,7 +992,7 @@ public class Resident extends TownyObject implements InviteReceiver, EconomyHand
 	@Override
 	public Audience audience() {
 		Player player = getPlayer();
-		return player == null ? Audience.empty() : Towny.getAdventure().player(player);
+		return player == null ? Audience.empty() : player;
 	}
 	
 	public boolean isSeeingBorderTitles() {

@@ -22,7 +22,6 @@ import com.palmergames.bukkit.towny.object.spawnlevel.TownSpawnLevel;
 
 import com.palmergames.bukkit.towny.tasks.TeleportWarmupTimerTask;
 import com.palmergames.bukkit.util.ItemLists;
-import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -119,7 +118,7 @@ public class SpawnUtil {
 
 	private static SpawnInformation getSpawnInformation(Player player, boolean noCmdArgs, String notAffordMSG, boolean outpost, SpawnType spawnType, Resident resident, Town town, Nation nation) {
 		// Is this an admin spawning?
-		final boolean isTownyAdmin = isTownyAdmin(player);
+		final boolean isTownyAdmin = isTownyAdmin(player, resident);
 
 		SpawnInformation spawnInformation = new SpawnInformation();
 		try {
@@ -133,7 +132,7 @@ public class SpawnUtil {
 			spawnInformation.nationSpawnLevel = getNationSpawnLevel(player, noCmdArgs, spawnType, resident, nation, isTownyAdmin);
 
 			// Get any applicable cooldown.
-			spawnInformation.cooldown = getCooldown(player, spawnInformation);
+			spawnInformation.cooldown = getCooldown(player, resident.hasMode("adminbypass"), spawnInformation);
 
 			// Prevent spawn travel while in the config's disallowed zones.
 			// Throws a TownyException if the player is disallowed.
@@ -166,7 +165,7 @@ public class SpawnUtil {
 			return;
 
 		// sets tp location to their bedspawn only if it isn't in the town they're being teleported from.
-		PaperLib.getBedSpawnLocationAsync(outlawedPlayer, true).thenAccept(bed -> {
+		BukkitTools.getRespawnLocation(outlawedPlayer).thenAccept(bed -> {
 			Location spawnLocation = town.getWorld().getSpawnLocation();
 			if (!TownySettings.getOutlawTeleportWorld().equals(""))
 				spawnLocation = Objects.requireNonNull(Bukkit.getWorld(TownySettings.getOutlawTeleportWorld())).getSpawnLocation();
@@ -227,8 +226,8 @@ public class SpawnUtil {
 	 * @param player Player to test permissions for.
 	 * @return true if this player has towny.admin or towny.admin.spawn in their permission nodes.
 	 */
-	private static boolean isTownyAdmin(Player player) {
-		return TownyUniverse.getInstance().getPermissionSource().isTownyAdmin(player) || hasPerm(player, PermissionNodes.TOWNY_SPAWN_ADMIN);
+	private static boolean isTownyAdmin(Player player, Resident resident) {
+		return TownyUniverse.getInstance().getPermissionSource().isTownyAdmin(player) || (!resident.hasMode("adminbypass") && hasPerm(player, PermissionNodes.TOWNY_SPAWN_ADMIN));
 	}
 	
 	/**
@@ -415,12 +414,14 @@ public class SpawnUtil {
 	 * Get the cooldown time on a player using a spawn command.
 	 * 
 	 * @param player           Player doing the spawning action.
+	 * @param hasAdminBypass   True if the player has the adminbypass mode enabled.
 	 * @param spawnInformation SpawnInformation containing the useful TownSpawnLevel
 	 *                         or NationSpawnLevel.
 	 * @return number of seconds a player must wait until they can spawn again.
 	 */
-	private static int getCooldown(Player player, SpawnInformation spawnInformation) {
-		return player.hasPermission(PermissionNodes.TOWNY_SPAWN_ADMIN_NOCOOLDOWN.getNode()) ? 0 : spawnInformation.townSpawnLevel != null ? spawnInformation.townSpawnLevel.getCooldown() : spawnInformation.nationSpawnLevel.getCooldown();
+	private static int getCooldown(Player player, boolean hasAdminBypass, SpawnInformation spawnInformation) {
+		return hasPerm(player, PermissionNodes.TOWNY_SPAWN_ADMIN_NOCOOLDOWN) && !hasAdminBypass ? 0
+			: spawnInformation.townSpawnLevel != null ? spawnInformation.townSpawnLevel.getCooldown() : spawnInformation.nationSpawnLevel.getCooldown();
 	}
 	
 	/**
@@ -440,7 +441,7 @@ public class SpawnUtil {
 		return switch (spawnType) {
 			case RESIDENT:
 				if (TownySettings.getBedUse()) {
-					yield PaperLib.getBedSpawnLocationAsync(player, true).thenApply(bedLoc -> {
+					yield BukkitTools.getRespawnLocation(player).thenApply(bedLoc -> {
 						if (bedLoc != null)
 							return bedLoc;
 						else if (town != null && town.hasSpawn())
@@ -466,7 +467,7 @@ public class SpawnUtil {
 		if (!TownySettings.isSafeTeleportUsed())
 			return CompletableFuture.completedFuture(location);
 		
-		return PaperLib.getChunkAtAsync(location).thenApply(chunk -> getSafeLocation(location, player));
+		return location.getWorld().getChunkAtAsync(location).thenApply(chunk -> getSafeLocation(location, player));
 	}
 
 	/**
@@ -486,6 +487,11 @@ public class SpawnUtil {
 			return location;
 		}
 
+		if (TownySettings.isStrictSafeTeleportUsed()) {
+			TownyMessaging.sendErrorMsg(p, Translatable.of("msg_spawn_cancel_safe_teleport"));
+			return null;
+		}
+		
 		final int range = 22;
 
 		BitSet isLiquidMap = new BitSet(range * 2);
@@ -769,9 +775,9 @@ public class SpawnUtil {
 	 */
 	private static SpawnEvent getSpawnEvent(Player player, SpawnType spawnType, Location spawnLoc, SpawnInformation spawnInfo) {
 		return switch(spawnType) {
-		case RESIDENT -> new ResidentSpawnEvent(player, player.getLocation(), spawnLoc, spawnInfo.eventCancelled, spawnInfo.eventCancellationMessage);
-		case TOWN -> new TownSpawnEvent(player, player.getLocation(), spawnLoc, spawnInfo.eventCancelled, spawnInfo.eventCancellationMessage);
-		case NATION -> new NationSpawnEvent(player, player.getLocation(), spawnLoc, spawnInfo.eventCancelled, spawnInfo.eventCancellationMessage);
+		case RESIDENT -> new ResidentSpawnEvent(player, player.getLocation(), spawnLoc, spawnInfo.travelCost, spawnInfo.eventCancelled, spawnInfo.eventCancellationMessage);
+		case TOWN -> new TownSpawnEvent(player, player.getLocation(), spawnLoc, spawnInfo.travelCost, spawnInfo.eventCancelled, spawnInfo.eventCancellationMessage);
+		case NATION -> new NationSpawnEvent(player, player.getLocation(), spawnLoc, spawnInfo.travelCost, spawnInfo.eventCancelled, spawnInfo.eventCancellationMessage);
 		};
 	}
 
@@ -789,9 +795,13 @@ public class SpawnUtil {
 		if (resident == null)
 			return;
 
-		if (TownyTimerHandler.isTeleportWarmupRunning() && !hasPerm(player, PermissionNodes.TOWNY_SPAWN_ADMIN_NOWARMUP)) {
+		boolean isUsingAdminBypass = resident.hasMode("adminbypass");
+		if (TownyTimerHandler.isTeleportWarmupRunning() && (!hasPerm(player, PermissionNodes.TOWNY_SPAWN_ADMIN_NOWARMUP) || isUsingAdminBypass)) {
 			// Use teleport warmup
-			TownyMessaging.sendMsg(player, Translatable.of("msg_town_spawn_warmup", TownySettings.getTeleportWarmupTime()));
+			int warmupTime = TownyUniverse.getInstance().getPermissionSource().getGroupPermissionIntNode(player.getName(), PermissionNodes.TOWNY_TELEPORT_WARMUP_SECONDS.getNode());
+			if (warmupTime == -1)
+				warmupTime = TownySettings.getTeleportWarmupTime();
+			TownyMessaging.sendMsg(player, Translatable.of("msg_town_spawn_warmup", warmupTime));
 			TeleportWarmupTimerTask.requestTeleport(resident, spawnLoc, cooldown, refundAccount, cost);
 		} else {
 			// Don't use teleport warmup
@@ -801,12 +811,13 @@ public class SpawnUtil {
 			// Teleporting a player can cause the chunk to unload too fast, abandoning pets.
 			addAndRemoveChunkTicket(WorldCoord.parseWorldCoord(player.getLocation()));
 
-			PaperLib.teleportAsync(player, spawnLoc, TeleportCause.COMMAND).thenAccept(successfulTeleport -> {
+			final Location prior = player.getLocation();
+			player.teleportAsync(spawnLoc, TeleportCause.COMMAND).thenAccept(successfulTeleport -> {
 				if (successfulTeleport)
-					BukkitTools.fireEvent(new SuccessfulTownyTeleportEvent(resident, spawnLoc, cost));
+					BukkitTools.fireEvent(new SuccessfulTownyTeleportEvent(resident, spawnLoc, cost, prior));
 			});
 
-			if (cooldown > 0 && !hasPerm(player, PermissionNodes.TOWNY_SPAWN_ADMIN_NOCOOLDOWN))
+			if (cooldown > 0 && (!hasPerm(player, PermissionNodes.TOWNY_SPAWN_ADMIN_NOCOOLDOWN) || isUsingAdminBypass))
 				CooldownTimerTask.addCooldownTimer(player.getName(), "teleport", cooldown);
 		}
 	}
@@ -866,7 +877,7 @@ public class SpawnUtil {
 			loc = town.getSpawnOrNull();
 
 		Location finalLoc = loc;
-		return PaperLib.getBedSpawnLocationAsync(resident.getPlayer(), true).thenApply(bed -> bed == null ? finalLoc : bed);
+		return BukkitTools.getRespawnLocation(resident.getPlayer()).thenApply(bed -> bed == null ? finalLoc : bed);
 	}
 	
 	/**
@@ -882,7 +893,7 @@ public class SpawnUtil {
 		if (player == null)
 			return;
 		
-		plugin.getScheduler().runLater(player, () -> PaperLib.teleportAsync(resident.getPlayer(), loc, TeleportCause.PLUGIN),
+		plugin.getScheduler().runLater(player, () -> resident.getPlayer().teleportAsync(loc, TeleportCause.PLUGIN),
 			ignoreWarmup ? 0 : TownySettings.getTeleportWarmupTime() * 20L);
 	}
 

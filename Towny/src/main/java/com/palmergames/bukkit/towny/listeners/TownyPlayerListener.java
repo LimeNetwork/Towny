@@ -46,12 +46,12 @@ import com.palmergames.bukkit.util.BukkitTools;
 import com.palmergames.bukkit.util.ChatTools;
 import com.palmergames.bukkit.util.EntityLists;
 import com.palmergames.bukkit.util.ItemLists;
-import com.palmergames.util.JavaUtil;
-import io.papermc.lib.PaperLib;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 import me.earthme.luminol.api.entity.EntityTeleportAsyncEvent;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -67,13 +67,16 @@ import org.bukkit.block.data.type.RespawnAnchor;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.entity.EntityExhaustionEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerArmorStandManipulateEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
@@ -92,10 +95,9 @@ import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTakeLecternBookEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.projectiles.ProjectileSource;
 
-import java.lang.invoke.MethodHandle;
 import java.util.Arrays;
-import java.util.Collection;
 
 /**
  * Handle events for all Player related events
@@ -116,10 +118,8 @@ public class TownyPlayerListener implements Listener {
 	
 	private int teleportWarmupTime = TownySettings.getTeleportWarmupTime();
 	private boolean isMovementCancellingWarmup = TownySettings.isMovementCancellingSpawnWarmup();
+	private boolean isPreventingSaturationLoss = TownySettings.preventSaturationLoss();
 	
-	// https://jd.papermc.io/paper/1.20/org/bukkit/event/player/PlayerRespawnEvent.html#getRespawnFlags()
-	private static final MethodHandle GET_RESPAWN_FLAGS = JavaUtil.getMethodHandle(PlayerRespawnEvent.class, "getRespawnFlags");
-
 	public TownyPlayerListener(Towny plugin) {
 		this.plugin = plugin;
 		loadBlockedCommandLists();
@@ -128,6 +128,9 @@ public class TownyPlayerListener implements Listener {
 		TownySettings.addReloadListener(NamespacedKey.fromString("teleport-warmups", plugin), () -> {
 			this.teleportWarmupTime = TownySettings.getTeleportWarmupTime();
 			this.isMovementCancellingWarmup = TownySettings.isMovementCancellingSpawnWarmup();
+		});
+		TownySettings.addReloadListener(NamespacedKey.fromString("saturation", plugin), () -> {
+			this.isPreventingSaturationLoss = TownySettings.preventSaturationLoss();
 		});
 	}
 
@@ -167,7 +170,7 @@ public class TownyPlayerListener implements Listener {
 			String msg = player.isOp() || player.hasPermission("towny.admin") 
 				? "Check the server's console for more information."
 				: "Tell an admin to check the server's console.";
-			player.sendMessage(ChatColor.RED + "[Towny] [Error] Towny is locked in Safe Mode due to an error! " + msg);
+			player.sendMessage(Component.text("[Towny] [Error] Towny is locked in Safe Mode due to an error! " + msg, NamedTextColor.RED));
 		}
 	}
 
@@ -205,7 +208,7 @@ public class TownyPlayerListener implements Listener {
 	
 	@EventHandler(priority = EventPriority.NORMAL)
 	public void onPlayerRespawn(PlayerRespawnEvent event) {
-		if (plugin.isError() || isEndPortalRespawn(event) || !TownySettings.isTownRespawning()) {
+		if (plugin.isError() || event.getRespawnReason() == PlayerRespawnEvent.RespawnReason.END_PORTAL || !TownySettings.isTownRespawning()) {
 			return;
 		}
 
@@ -240,29 +243,6 @@ public class TownyPlayerListener implements Listener {
 		long protectionTime = TownySettings.getSpawnProtectionDuration();
 		if (protectionTime > 0L && resident != null)
 			resident.addRespawnProtection(protectionTime);
-	}
-	
-	private boolean isEndPortalRespawn(PlayerRespawnEvent event) {
-		try {
-			final Collection<Enum<?>> respawnFlags = (Collection<Enum<?>>) GET_RESPAWN_FLAGS.invoke(event);
-			
-			for (final Enum<?> flag : respawnFlags) {
-				if ("END_PORTAL".equals(flag.name()))
-					return true;
-			}
-			
-			return false;
-		} catch (Throwable e) {
-			// Spigot
-			final Player player = event.getPlayer();
-			
-			if (player.getWorld().getEnvironment() != Environment.THE_END)
-				return false;
-			
-			// Can cause a sync chunk load
-			// Check if legs or head is inside an end portal block
-			return player.getLocation().getBlock().getType() == Material.END_PORTAL || player.getEyeLocation().getBlock().getType() == Material.END_PORTAL;
-		}
 	}
 	
 	@EventHandler(priority = EventPriority.HIGHEST)
@@ -387,7 +367,7 @@ public class TownyPlayerListener implements Listener {
 					(ItemLists.DYES.contains(item) && ItemLists.SIGNS.contains(clickedMat)) ||
 					(item == Material.FLINT_AND_STEEL && clickedMat == Material.TNT) ||
 					(item == Material.SHEARS && clickedMat == Material.PUMPKIN) ||
-					clickedMat.getKey().equals(NamespacedKey.minecraft("rooted_dirt")) && ItemLists.HOES.contains(item) ||
+					clickedMat == Material.ROOTED_DIRT && ItemLists.HOES.contains(item) ||
 					ItemLists.BRUSHABLE_BLOCKS.contains(clickedMat) && item == Material.BRUSH) { 
 
 					if (!TownyActionEventExecutor.canDestroy(player, loc, clickedMat)) {
@@ -469,7 +449,7 @@ public class TownyPlayerListener implements Listener {
 				ItemLists.HARVESTABLE_BERRIES.contains(clickedMat) ||
 				ItemLists.REDSTONE_INTERACTABLES.contains(clickedMat) ||
 				ItemLists.CANDLES.contains(clickedMat) ||
-				clickedMat.getKey().equals(NamespacedKey.minecraft("turtle_egg")) ||
+				clickedMat == Material.TURTLE_EGG ||
 				clickedMat.getKey().equals(NamespacedKey.minecraft("chiseled_bookshelf")) ||
 				clickedMat == Material.BEACON || clickedMat == Material.DRAGON_EGG || 
 				clickedMat == Material.COMMAND_BLOCK){
@@ -639,6 +619,38 @@ public class TownyPlayerListener implements Listener {
 	}
 
 	/*
+	 * Handles projectiles which are considered for Itemuse, in order to catch them
+	 * when they are used on AIR which do not register PlayerInteractEvents.
+	 */
+	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+	public void onPlayerSpawnItemuseProjectile(ProjectileLaunchEvent event) {
+
+		if (plugin.isError()) {
+			event.setCancelled(true);
+			return;
+		}
+
+		if (!TownyAPI.getInstance().isTownyWorld(event.getEntity().getWorld()))
+			return;
+
+		Projectile projectile = event.getEntity();
+		ProjectileSource source = projectile.getShooter();
+		if (!(source instanceof Player player))
+			return;
+
+		Material item = EntityTypeUtil.parseEntityToMaterial(event.getEntityType());
+		Location loc = player.getLocation();
+		if (item == null || !TownySettings.isItemUseMaterial(item, loc))
+			return;
+
+		/*
+		 * Test item_use. 
+		 */
+		if (!TownyActionEventExecutor.canItemuse(player, loc, item))
+			event.setCancelled(true);
+	}
+
+	/*
 	* Handles protection of Armor Stands.
 	*/	
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -674,82 +686,87 @@ public class TownyPlayerListener implements Listener {
 		if (!TownyAPI.getInstance().isTownyWorld(event.getPlayer().getWorld()))
 			return;
 		
-		if (event.getRightClicked() != null) {
-			Player player = event.getPlayer();
-			Material mat = null;
-			ActionType actionType = ActionType.DESTROY;
-			EntityType entityType = event.getRightClicked().getType();
-			
-			Material item = player.getInventory().getItem(EquipmentSlot.HAND).getType();
+		if (event.getRightClicked() == null)
+			return;
 
-			/*
-			 * The following will get us a Material substituted in for an Entity so that we can run permission tests.
-			 */
-			if (EntityLists.SWITCH_PROTECTED.contains(entityType)) {
-				mat = EntityTypeUtil.parseEntityToMaterial(entityType);
-				actionType = ActionType.SWITCH;
-			} else if (EntityLists.DYEABLE.contains(entityType) && ItemLists.DYES.contains(item))
-				mat = item;
-			else if (item != null && item == Material.BUCKET && EntityLists.MILKABLE.contains(entityType)) {
-				mat = EntityTypeUtil.parseEntityToMaterial(entityType);
-				actionType = ActionType.ITEM_USE;
-			} else if (item != null && item == Material.COOKIE && EntityType.PARROT.equals(entityType))
-				mat = EntityTypeUtil.parseEntityToMaterial(entityType);
-			else if (EntityLists.RIGHT_CLICK_PROTECTED.contains(entityType))
-				mat = EntityTypeUtil.parseEntityToMaterial(entityType);
+		Player player = event.getPlayer();
+		Material mat = null;
+		ActionType actionType = ActionType.DESTROY;
+		EntityType entityType = event.getRightClicked().getType();
 
-			/*
-			 * A material has been substitued correctly in place of one of the above EntityTypes.
-			 * 
-			 * We will decide how to react based on either of the following tests.
-			 */
-			if (mat != null) {
-				// Material has been supplied in place of an entity, run Destroy Tests.
-				if (actionType == ActionType.DESTROY) {
-					//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
-					event.setCancelled(!TownyActionEventExecutor.canDestroy(player, event.getRightClicked().getLocation(), mat));
-					return;
-				}
-				// Material has been supplied in place of an entity, run Switch Tests.
-				if (TownySettings.isSwitchMaterial(mat, event.getRightClicked().getLocation()) && actionType == ActionType.SWITCH) {
-					//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
-					event.setCancelled(!TownyActionEventExecutor.canSwitch(player, event.getRightClicked().getLocation(), mat));
-					return;
-				} 
+		Material item = player.getInventory().getItemInMainHand().getType();
+
+		/*
+		 * The following will get us a Material substituted in for an Entity so that we can run permission tests.
+		 */
+		if (EntityLists.SWITCH_PROTECTED.contains(entityType)) {
+			mat = EntityTypeUtil.parseEntityToMaterial(entityType);
+			actionType = ActionType.SWITCH;
+		} else if (EntityLists.DYEABLE.contains(entityType) && ItemLists.DYES.contains(item))
+			mat = item;
+		else if (item == Material.BUCKET && EntityLists.MILKABLE.contains(entityType)) {
+			mat = EntityTypeUtil.parseEntityToMaterial(entityType);
+			actionType = ActionType.ITEM_USE;
+		} else if (item == Material.COOKIE && EntityType.PARROT.equals(entityType)) {
+			mat = EntityTypeUtil.parseEntityToMaterial(entityType);
+		} else if ((ItemLists.AXES.contains(item) || item == Material.HONEYCOMB) && entityType.getKey().getKey().equals("copper_golem")) {
+			mat = EntityTypeUtil.parseEntityToMaterial(entityType);
+			actionType = ActionType.ITEM_USE;
+		} else if (EntityLists.RIGHT_CLICK_PROTECTED.contains(entityType)) {
+			mat = EntityTypeUtil.parseEntityToMaterial(entityType);
+		}
+
+		/*
+		 * A material has been substitued correctly in place of one of the above EntityTypes.
+		 * 
+		 * We will decide how to react based on either of the following tests.
+		 */
+		if (mat != null) {
+			// Material has been supplied in place of an entity, run Destroy Tests.
+			if (actionType == ActionType.DESTROY) {
+				//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
+				event.setCancelled(!TownyActionEventExecutor.canDestroy(player, event.getRightClicked().getLocation(), mat));
+				return;
 			}
-			
-			/*
-			 * Handle things which need an item in hand.
-			 */
-			if (item != null) {
+			// Material has been supplied in place of an entity, run Switch Tests.
+			if (TownySettings.isSwitchMaterial(mat, event.getRightClicked().getLocation()) && actionType == ActionType.SWITCH) {
+				//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
+				event.setCancelled(!TownyActionEventExecutor.canSwitch(player, event.getRightClicked().getLocation(), mat));
+				return;
+			} 
+		}
+		
+		/*
+		 * Handle things which need an item in hand.
+		 */
+		if (item == null)
+			return;
 
-				/*
-				 * Sheep can be sheared, protect them if they aren't in the wilderness.
-				 */
-				if (event.getRightClicked().getType().equals(EntityType.SHEEP) && item == Material.SHEARS && !TownyAPI.getInstance().isWilderness(event.getRightClicked().getLocation())) {
-					//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
-					event.setCancelled(!TownyActionEventExecutor.canDestroy(player, event.getRightClicked().getLocation(), item));
-					return;
-				}
-				
-				/*
-				 * Nametags can be used on things.
-				 */
-				if (item == Material.NAME_TAG) {
-					//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
-					event.setCancelled(!TownyActionEventExecutor.canDestroy(player, event.getRightClicked().getLocation(), item));
-					return;
-				}
-				
-				/*
-				 * Item_use protection.
-				 */
-				if (TownySettings.isItemUseMaterial(item, event.getRightClicked().getLocation())) {
-					//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
-					event.setCancelled(!TownyActionEventExecutor.canItemuse(player, event.getRightClicked().getLocation(), item));
-					return;
-				}
-			}
+		/*
+		 * Sheep and mountable entities can be sheared, protect them if they aren't in the wilderness.
+		 */
+		if (item == Material.SHEARS && !TownyAPI.getInstance().isWilderness(event.getRightClicked().getLocation()) && (event.getRightClicked().getType().equals(EntityType.SHEEP) || EntityLists.MOUNTABLE.contains(entityType))) {
+			//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
+			event.setCancelled(!TownyActionEventExecutor.canDestroy(player, event.getRightClicked().getLocation(), item));
+			return;
+		}
+
+		/*
+		 * Nametags can be used on things.
+		 */
+		if (item == Material.NAME_TAG) {
+			//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
+			event.setCancelled(!TownyActionEventExecutor.canDestroy(player, event.getRightClicked().getLocation(), item));
+			return;
+		}
+
+		/*
+		 * Item_use protection.
+		 */
+		if (TownySettings.isItemUseMaterial(item, event.getRightClicked().getLocation())) {
+			//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
+			event.setCancelled(!TownyActionEventExecutor.canItemuse(player, event.getRightClicked().getLocation(), item));
+			return;
 		}
 	}
 
@@ -934,6 +951,26 @@ public class TownyPlayerListener implements Listener {
 			}
 		}	
 	}
+	
+	@EventHandler
+	public void onEntityExhaustion(EntityExhaustionEvent event) {
+		// Stop player exhaustion if criteria is met to prevent saturation loss
+		if (!this.isPreventingSaturationLoss)
+			return;
+		if (!(event.getEntity() instanceof Player player))
+			return;
+		if (!TownyAPI.getInstance().isTownyWorld(player.getWorld()))
+			return;
+		TownBlock tbAtPlayer = TownyAPI.getInstance().getTownBlock(player);
+		if (tbAtPlayer == null)
+			return;
+		Town townAtPlayer = tbAtPlayer.getTownOrNull();
+		Town playersTown = TownyAPI.getInstance().getTown(player);
+		if (playersTown == null)
+			return;
+		if (townAtPlayer != null && !townAtPlayer.hasActiveWar() && CombatUtil.isAlly(townAtPlayer, playersTown) && !tbAtPlayer.getType().equals(TownBlockType.ARENA))
+			event.setCancelled(true);
+	} 
 
 	/*
 	* PlayerMoveEvent that can fire the PlayerChangePlotEvent
@@ -1434,7 +1471,7 @@ public class TownyPlayerListener implements Listener {
 				&& event.getClickedBlock() != null) {
 					Player player = event.getPlayer();
 					Block block = event.getClickedBlock();
-					final BlockState state = PaperLib.getBlockState(block, false).getState();
+					final BlockState state = block.getState(false);
 					final BlockData data = state.getBlockData();
 					
 					if (ItemLists.SIGNS.contains(block.getType()) && data instanceof Rotatable rotatable) {
@@ -1536,7 +1573,7 @@ public class TownyPlayerListener implements Listener {
 	}
 	
 	private boolean isSignWaxed(Block block) {
-		if (MinecraftVersion.CURRENT_VERSION.isOlderThan(MinecraftVersion.MINECRAFT_1_20) || !(PaperLib.getBlockState(block, false).getState() instanceof Sign sign))
+		if (MinecraftVersion.CURRENT_VERSION.isOlderThan(MinecraftVersion.MINECRAFT_1_20) || !(block.getState(false) instanceof Sign sign))
 			return false;
 		
 		try {

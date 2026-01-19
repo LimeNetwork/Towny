@@ -18,8 +18,6 @@ import com.palmergames.bukkit.towny.object.economy.Account;
 import com.palmergames.bukkit.towny.utils.SpawnUtil;
 import com.palmergames.bukkit.util.BukkitTools;
 
-import io.papermc.lib.PaperLib;
-
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -71,9 +69,10 @@ public class TeleportWarmupTimerTask extends TownyTimerTask {
 				// Teleporting a player can cause the chunk to unload too fast, abandoning pets.
 				SpawnUtil.addAndRemoveChunkTicket(WorldCoord.parseWorldCoord(player.getLocation()));
 
-				PaperLib.teleportAsync(player, request.destinationLocation(), TeleportCause.COMMAND).thenAccept(successfulTeleport -> {
+				final Location prior = player.getLocation();
+				player.teleportAsync(request.destinationLocation(), TeleportCause.COMMAND).thenAccept(successfulTeleport -> {
 					if (successfulTeleport)
-						BukkitTools.fireEvent(new SuccessfulTownyTeleportEvent(resident, request.destinationLocation(), request.teleportCost()));
+						BukkitTools.fireEvent(new SuccessfulTownyTeleportEvent(resident, request.destinationLocation(), request.teleportCost(), prior));
 				});
 
 				if (request.cooldown() > 0)
@@ -87,7 +86,7 @@ public class TeleportWarmupTimerTask extends TownyTimerTask {
 			if (TownySettings.isTeleportWarmupUsingTitleMessage() && millis >= 1000) {
 				String title = TownySettings.isMovementCancellingSpawnWarmup() ? Translatable.of("teleport_warmup_title_dont_move").forLocale(resident) : "";
 				String subtitle = Translatable.of("teleport_warmup_subtitle_seconds_remaining", seconds).forLocale(resident);
-				resident.getPlayer().sendTitle(title, subtitle, 0, 25, (seconds == 1 ? 15 : 0));
+				TownyMessaging.sendTitle(resident.getPlayer(), title, subtitle, 0, 25, (seconds == 1 ? 15 : 0));
 			}
 			// Send a particle that drops from above the player to their feet over the course of the warmup.
 			if (TownySettings.isTeleportWarmupShowingParticleEffect()) {
