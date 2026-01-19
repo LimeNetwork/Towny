@@ -51,6 +51,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import me.earthme.luminol.api.entity.EntityTeleportAsyncEvent;
+import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -825,7 +826,7 @@ public class TownyPlayerListener implements Listener {
 			return;
 
 		if (plugin.isError()) {
-			event.setCancelled(true);
+//			event.setCancelled(true); // Not supported by Luminol's EntityTeleportAsyncEvent
 			return;
 		}
 		
