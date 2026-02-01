@@ -71,10 +71,8 @@ public class HealthRegenTimerTask extends TownyTimerTask {
 	}
 
 	private boolean playerAllowedToHealHere(Town playersTown, TownBlock tbAtPlayer) {
-		if (tbAtPlayer == null)
-			return false;
-		Town townAtPlayer = tbAtPlayer.getTownOrNull();
-		return townAtPlayer != null && !townAtPlayer.hasActiveWar() && CombatUtil.isAlly(townAtPlayer, playersTown) && !tbAtPlayer.getType().equals(TownBlockType.ARENA);
+		// Health regeneration disabled
+		return false;
 	}
 
 	private void evaluateHealth(Player player) {
