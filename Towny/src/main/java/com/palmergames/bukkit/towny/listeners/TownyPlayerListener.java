@@ -772,7 +772,7 @@ public class TownyPlayerListener implements Listener {
 
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerMove(EntityTeleportAsyncEvent event) {
-		Player player = (Player) event.getEntity();
+		if (!(event.getEntity() instanceof Player player)) return;
 		
 		// Let's ignore Citizens NPCs
 		if (PluginIntegrations.getInstance().isNPC(player))
