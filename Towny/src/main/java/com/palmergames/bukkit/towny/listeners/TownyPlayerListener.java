@@ -51,7 +51,6 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
 import me.earthme.luminol.api.entity.EntityTeleportAsyncEvent;
-import io.papermc.lib.PaperLib;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -772,9 +771,11 @@ public class TownyPlayerListener implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-	public void onPlayerMove(PlayerMoveEvent event) {
+	public void onPlayerMove(EntityTeleportAsyncEvent event) {
+		Player player = (Player) event.getEntity();
+		
 		// Let's ignore Citizens NPCs
-		if (PluginIntegrations.getInstance().isNPC(event.getPlayer()))
+		if (PluginIntegrations.getInstance().isNPC(player))
 			return;
 		
 		if (plugin.isError()) {
@@ -782,8 +783,7 @@ public class TownyPlayerListener implements Listener {
 			return;
 		}
 
-		Player player = event.getPlayer();
-		Location to = event.getTo();
+		Location to = event.getDestination();
 		Location from = event.getFrom();
 
 		/*
@@ -826,7 +826,7 @@ public class TownyPlayerListener implements Listener {
 			return;
 
 		if (plugin.isError()) {
-//			event.setCancelled(true); // Not supported by Luminol's EntityTeleportAsyncEvent
+			event.setCancelled(true);
 			return;
 		}
 		
@@ -837,7 +837,7 @@ public class TownyPlayerListener implements Listener {
 		boolean isAdmin = !Towny.getPlugin().hasPlayerMode(player, "adminbypass") && (resident.isAdmin() || resident.hasPermissionNode(PermissionNodes.TOWNY_ADMIN_OUTLAW_TELEPORT_BYPASS.getNode()));
 		if (isAdmin) {
 			// Admins don't get restricted further but they do need to fire the PlayerChangePlotEvent.
-			onPlayerMove(new PlayerMoveEvent(player, player.getLocation(), event.getDestination()));
+			onPlayerMove(event);
 			return;
 		}
 
@@ -845,14 +845,13 @@ public class TownyPlayerListener implements Listener {
 		if (resident.isJailed()) {
 			if (event.getTeleportCause() == TeleportCause.COMMAND) {
 				TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_jailed_players_no_teleport"));
-				PaperLib.teleportAsync(player, player.getLocation());
-//				event.setCancelled(true); * cancel event is not supported rn
+				event.setCancelled(true);
 				return;
 			}
 			if (!TownySettings.JailAllowsTeleportItems() && (event.getTeleportCause() == TeleportCause.ENDER_PEARL || event.getTeleportCause() == TeleportCause.CHORUS_FRUIT)) {
 				TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_jailed_players_no_teleport"));
-				PaperLib.teleportAsync(player, player.getLocation());
-//				event.setCancelled(true); * cancel event is not supported rn
+				player.teleportAsync(player.getLocation());
+				event.setCancelled(true);
 				return;
 			}
 		}
@@ -865,14 +864,13 @@ public class TownyPlayerListener implements Listener {
 				if (town != null && town.hasOutlaw(resident)) {
 					if (event.getTeleportCause() == TeleportCause.COMMAND) {
 						TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_outlawed_players_no_teleport"));
-						PaperLib.teleportAsync(player, player.getLocation());
-//						event.setCancelled(true); * cancel event is not supported rn
+						event.setCancelled(true);
 						return;
 					}
 					if (!TownySettings.canOutlawsUseTeleportItems() && (event.getTeleportCause() == TeleportCause.ENDER_PEARL || event.getTeleportCause() == TeleportCause.CHORUS_FRUIT)) {
 						TownyMessaging.sendErrorMsg(player, Translatable.of("msg_err_outlawed_players_no_teleport"));
-						PaperLib.teleportAsync(player, player.getLocation());
-//						event.setCancelled(true); * cancel event is not supported rn
+						player.teleportAsync(player.getLocation());
+						event.setCancelled(true);
 						return;
 					}
 				}
@@ -883,8 +881,7 @@ public class TownyPlayerListener implements Listener {
 		if (event.getTeleportCause() == TeleportCause.CHORUS_FRUIT && TownySettings.isItemUseMaterial(Material.CHORUS_FRUIT, event.getDestination())) {
 			//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
 			if (!TownyActionEventExecutor.canItemuse(player, event.getDestination(), Material.CHORUS_FRUIT)) {
-				PaperLib.teleportAsync(player, player.getLocation());
-//				event.setCancelled(true); * cancel event is not supported rn
+				event.setCancelled(true);
 				return;
 			}
 		}
@@ -893,8 +890,7 @@ public class TownyPlayerListener implements Listener {
 		if (event.getTeleportCause() == TeleportCause.ENDER_PEARL && TownySettings.isItemUseMaterial(Material.ENDER_PEARL, event.getDestination())) {
 			//Make decision on whether this is allowed using the PlayerCache and then a cancellable event.
 			if (!TownyActionEventExecutor.canItemuse(player, event.getDestination(), Material.ENDER_PEARL)) {
-				PaperLib.teleportAsync(player, player.getLocation());
-//				event.setCancelled(true); * cancel event is not supported rn
+				event.setCancelled(true);
 				return;
 			}
 		}
@@ -904,7 +900,7 @@ public class TownyPlayerListener implements Listener {
 			resident.removeRespawnProtection();
 
 		// Send the event to the onPlayerMove so Towny can fire the PlayerChangePlotEvent.
-		onPlayerMove(new PlayerMoveEvent(player, player.getLocation(), event.getDestination()));
+		onPlayerMove(event);
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -976,13 +972,13 @@ public class TownyPlayerListener implements Listener {
 	/*
 	* PlayerMoveEvent that can fire the PlayerChangePlotEvent
 	*/
-	private void onPlayerMoveChunk(Player player, WorldCoord from, WorldCoord to, PlayerMoveEvent moveEvent) {
+	private void onPlayerMoveChunk(Player player, WorldCoord from, WorldCoord to, EntityTeleportAsyncEvent moveEvent) {
 
 		final PlayerCache cache = plugin.getCacheOrNull(player.getUniqueId());
 		if (cache != null)
 			cache.resetAndUpdate(to);
 
-		PlayerChangePlotEvent event = new PlayerChangePlotEvent(player, from, to, moveEvent);
+		PlayerChangePlotEvent event = new PlayerChangePlotEvent(player, from, to, new PlayerMoveEvent(player, moveEvent.getFrom(), moveEvent.getDestination()));
 		BukkitTools.fireEvent(event);
 	}
 	
