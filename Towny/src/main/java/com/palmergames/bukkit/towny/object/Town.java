@@ -62,7 +62,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -841,6 +840,7 @@ public class Town extends Government implements TownBlockOwner {
 				continue;
 
 			TownMayorChosenBySuccessionEvent tmcbse = new TownMayorChosenBySuccessionEvent(mayor, newMayor, potentialResidents);
+			tmcbse.callEvent();
 			setMayor(tmcbse.getNewMayor());
 			return true;
 		}

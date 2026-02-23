@@ -10677,3 +10677,30 @@ v0.92.0.11:
     - How many seconds in between warning messages, to prevent spam.
 0.102.0.6:
   - Fix titles messages showing their subtitle in the title position.
+  - Fix towny_teleport_warmup_seconds permission node not working.
+  - Fix copper golem test that caused Could not pass event ItemTransportingEntityValidateTargetEvent spam.
+    - Closes #8085.
+  - Bump net.coreprotect:coreprotect from 22.4 to 23.1.
+  - Bump me.clip:placeholderapi from 2.11.6 to 2.11.7.
+  - Bump org.apache.commons:commons-compress from 1.26.2 to 1.28.0.
+  - Fix the mayor succession event not being fired, courtesy of Warrior with PR #8086.
+  - Skip proximity checks when minimum plot distance is set to 0, courtesy of MakcNmk with PR #8087. (First-Time Contributor!)
+0.102.0.7:
+  - Add new CHESTS_WITHOUT_ENDERCHEST group, usable in the config switch_ids list, includes all chests but the enderchest.
+    - Closes #8095.
+  - Add getFormattedTimeValue that accepts a player locale.
+  - Fix adminbypass mode not applying to nationzones.
+  - Fix title and surname settings issues.
+  - Restrict usable minimessage tags in titles/surnames, courtesy of Warrior with PR #8096.
+  - Re-add removed res_8 lang string, courtesy of Warrior with PR #8097.
+  - Add new hovers to town and nation lists.
+    - Separate spawn and town/nation status screen hovers/clickables are now available.
+    - Closes #8100.
+  - Add PLOT_GROUP_TOGGLE to TownyCommandAddonAPI, courtesy of Veyronity with PR #8107.
+  - Bump me.clip:placeholderapi from 2.11.7 to 2.12.2.
+  - Bump org.apache.maven.plugins:maven-compiler-plugin from 3.14.1 to 3.15.0.
+0.102.0.8:
+  - Fix outposts not following the min_distances_ignored_for_towns_in_same_nation and min_distances_ignored_for_towns_in_allied_nation 
+    when min_distance_for_outpost_from_plot is tested while creating an outpost using /t claim outpost.
+    - Closes #7829. 
+  - Fix plot command being blocked in ruined Towns for players who are not town members.
