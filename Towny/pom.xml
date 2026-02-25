@@ -80,6 +80,7 @@
 			<groupId>net.cubixia</groupId>
 			<artifactId>cyanol-api</artifactId>
 			<version>1.21.4</version>
+            <scope>provided</scope>
 		</dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
