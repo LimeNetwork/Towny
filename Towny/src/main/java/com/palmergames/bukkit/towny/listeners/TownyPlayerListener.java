@@ -771,11 +771,9 @@ public class TownyPlayerListener implements Listener {
 	}
 
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-	public void onPlayerMove(EntityTeleportAsyncEvent event) {
-		if (!(event.getEntity() instanceof Player player)) return;
-		
+	public void onPlayerMove(PlayerMoveEvent event) {
 		// Let's ignore Citizens NPCs
-		if (PluginIntegrations.getInstance().isNPC(player))
+		if (PluginIntegrations.getInstance().isNPC(event.getPlayer()))
 			return;
 		
 		if (plugin.isError()) {
@@ -783,7 +781,8 @@ public class TownyPlayerListener implements Listener {
 			return;
 		}
 
-		Location to = event.getDestination();
+		Player player = event.getPlayer();
+		Location to = event.getTo();
 		Location from = event.getFrom();
 
 		/*
@@ -837,7 +836,7 @@ public class TownyPlayerListener implements Listener {
 		boolean isAdmin = !Towny.getPlugin().hasPlayerMode(player, "adminbypass") && (resident.isAdmin() || resident.hasPermissionNode(PermissionNodes.TOWNY_ADMIN_OUTLAW_TELEPORT_BYPASS.getNode()));
 		if (isAdmin) {
 			// Admins don't get restricted further but they do need to fire the PlayerChangePlotEvent.
-			onPlayerMove(event);
+			onPlayerMove(new PlayerMoveEvent(player, player.getLocation(), event.getDestination()));
 			return;
 		}
 
@@ -900,7 +899,7 @@ public class TownyPlayerListener implements Listener {
 			resident.removeRespawnProtection();
 
 		// Send the event to the onPlayerMove so Towny can fire the PlayerChangePlotEvent.
-		onPlayerMove(event);
+		onPlayerMove(new PlayerMoveEvent(player, player.getLocation(), event.getDestination()));
 	}
 
 	@EventHandler(priority = EventPriority.LOWEST)
@@ -972,13 +971,13 @@ public class TownyPlayerListener implements Listener {
 	/*
 	* PlayerMoveEvent that can fire the PlayerChangePlotEvent
 	*/
-	private void onPlayerMoveChunk(Player player, WorldCoord from, WorldCoord to, EntityTeleportAsyncEvent moveEvent) {
+	private void onPlayerMoveChunk(Player player, WorldCoord from, WorldCoord to, PlayerMoveEvent moveEvent) {
 
 		final PlayerCache cache = plugin.getCacheOrNull(player.getUniqueId());
 		if (cache != null)
 			cache.resetAndUpdate(to);
 
-		PlayerChangePlotEvent event = new PlayerChangePlotEvent(player, from, to, new PlayerMoveEvent(player, moveEvent.getFrom(), moveEvent.getDestination()));
+		PlayerChangePlotEvent event = new PlayerChangePlotEvent(player, from, to, moveEvent);
 		BukkitTools.fireEvent(event);
 	}
 	
