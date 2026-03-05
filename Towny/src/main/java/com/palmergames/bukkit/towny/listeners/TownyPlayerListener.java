@@ -618,10 +618,12 @@ public class TownyPlayerListener implements Listener {
 			&& (event.getItem() == null || (event.getItem().getType() != Material.GLOWSTONE || anchor.getCharges() >= anchor.getMaximumCharges()));
 	}
 
+	
 	/*
 	 * Handles projectiles which are considered for Itemuse, in order to catch them
 	 * when they are used on AIR which do not register PlayerInteractEvents.
 	 */
+	/*
 	@EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
 	public void onPlayerSpawnItemuseProjectile(ProjectileLaunchEvent event) {
 
@@ -646,10 +648,12 @@ public class TownyPlayerListener implements Listener {
 		/*
 		 * Test item_use. 
 		 */
+	/*
 		if (!TownyActionEventExecutor.canItemuse(player, loc, item))
 			event.setCancelled(true);
 	}
-
+	*/
+	
 	/*
 	* Handles protection of Armor Stands.
 	*/	
