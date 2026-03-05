@@ -411,7 +411,8 @@ public class TownySettings {
 	}
 
 	public static NationLevel getNationLevel(Nation nation) {
-		return getNationLevel(nation.getLevelNumber());
+		int numResidents = getResidentCountForNationLevel(nation.getLevelNumber());
+		return getNationLevel(numResidents);
 	}
 
 	public static NationLevel getNationLevelWithModifier(int modifier) {
@@ -429,10 +430,28 @@ public class TownySettings {
 	 */
 	@ApiStatus.Internal
 	public static int getNationLevelFromGivenInt(int threshold) {
-		for (Integer level : configNationLevel.keySet())
+		int i = TownySettings.getNationLevelMax() - 1;
+		for (Integer level : configNationLevel.keySet()) {
 			if (threshold >= level)
-				return level;
+				return i;
+			i--;
+		}
 		return 0;
+	}
+
+	/**
+	 * Gets the number of residents required to look up the NationLevel in the SortedMap.
+	 * @param level The number used to get the key from the keySet array. 
+	 * @return the number of residents which will get us the correct TownLevel in the NationLevel SortedMap.
+	 */
+	public static int getResidentCountForNationLevel(int level) {
+		Integer[] keys = configNationLevel.keySet().toArray(new Integer[] {});
+		// keys is always ordered from biggest to lowest (despite what the javadocs say
+		// about being sorted in Ascending order, this is not the case for a SortedMap.)
+		// We have to get it from lowest to largest.
+		Arrays.sort(keys);
+		level = Math.min(level, keys.length);
+		return keys[level];
 	}
 
 	public static int getNationLevelMax() {
