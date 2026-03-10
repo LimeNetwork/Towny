@@ -1297,6 +1297,16 @@ public class TownySettings {
 
 		if (ratio == 0)
 			n += town.getTownLevel().townBlockLimit();
+		else if (isDeletingOldResidents() && isDeletingOldResidentsRemovingTownOnly() && isDeletingOldResidentsRemovingClaimCountOnly() && !isDeleteTownlessOnly()) {
+			int residents = 0;
+			long now = System.currentTimeMillis();
+			long deleteTime = getDeleteTime() * 1000;
+			for (Resident resident : town.getResidents()) {
+				if (resident.isNPC() || BukkitTools.isOnline(resident.getName()) || now - resident.getLastOnline() <= deleteTime)
+					residents++;
+			}
+			n += residents * ratio;
+		}
 		else
 			n += town.getNumResidents() * ratio;
 
@@ -3688,6 +3698,10 @@ public class TownySettings {
 	public static List<String> getOutlawBlacklistedCommands() {
 		return getStrArr(ConfigNodes.GTOWN_SETTINGS_OUTLAW_BLACKLISTED_COMMANDS);
 	}
+	
+	public static boolean areEnemiesOutlaws() {
+		return getBoolean(ConfigNodes.GTOWN_SETTINGS_CONSIDER_ENEMIES_OUTLAWS);
+	}
 
 	public static List<String> getWarBlacklistedCommands() {
 		return getStrArr(ConfigNodes.GTOWN_SETTINGS_WAR_BLACKLISTED_COMMANDS);
@@ -3994,6 +4008,10 @@ public class TownySettings {
 		return getBoolean(ConfigNodes.RES_SETTINGS_DELETE_OLD_RESIDENTS_REMOVE_TOWN_ONLY);
 	}
 	
+	public static boolean isDeletingOldResidentsRemovingClaimCountOnly() {
+		return getBoolean(ConfigNodes.RES_SETTINGS_DELETE_OLD_RESIDENTS_REMOVE_CLAIM_COUNT_ONLY);
+	}
+	
 	public static boolean disableMySQLBackupWarning() {
 		return DatabaseConfig.getBoolean(DatabaseConfig.DATABASE_SQL_DISABLE_BACKUP_WARNING);
 	}
@@ -4016,6 +4034,14 @@ public class TownySettings {
 	
 	public static int getResidentOutlawWarningMessageCooldown() {
 		return getInt(ConfigNodes.RES_SETTINGS_WARN_PLAYER_ON_OUTLAW_MESSAGE_COOLDOWN_TIME);
+	}
+
+	public static int getTownMergeRequestCooldown() {
+		return getInt(ConfigNodes.GTOWN_SETTINGS_MERGE_COOLDOWN_TIMER);
+	}
+
+	public static int getNationMergeRequestCooldown() {
+		return getInt(ConfigNodes.GNATION_SETTINGS_MERGE_COOLDOWN_TIMER);
 	}
 
 	public static double maxBuyTownPrice() {
