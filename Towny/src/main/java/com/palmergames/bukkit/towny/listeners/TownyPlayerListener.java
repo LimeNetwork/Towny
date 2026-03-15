@@ -145,7 +145,7 @@ public class TownyPlayerListener implements Listener {
 
 		// Test and kick any players with invalid names.
 		if (player.getName().contains(" ")) {
-			player.kickPlayer("Invalid name!");
+			player.kick(Component.text("Invalid name!"));
 			return;
 		}
 
